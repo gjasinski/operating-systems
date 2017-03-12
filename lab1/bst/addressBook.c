@@ -4,6 +4,54 @@
 
 #include "bstTree.h"
 
+int main(void) {
+  BstTree* ad = createTree(1);
+  BstNode* tmp = createBstNode("aaa", "ddd", "6", "aaa", "aaa", "aaa");
+  addBstNode(ad, tmp);
+  tmp = createBstNode("aaa", "e", "8", "aaa", "aaa", "aaa");
+  addBstNode(ad, tmp);
+  tmp = createBstNode("aaa", "da", "10", "aaa", "aaa", "aaa");
+  addBstNode(ad, tmp);
+  tmp = createBstNode("aaa", "bb", "5", "aaa", "aaa", "aaa");
+  addBstNode(ad, tmp);
+  tmp = createBstNode("aaa", "bc", "3", "aaa", "aaa", "aaa");
+  addBstNode(ad, tmp);
+  tmp = createBstNode("aaa", "db", "7", "aaa", "aaa", "aaa");
+  addBstNode(ad, tmp);
+  printTree(ad->tree);
+  ad = reorderAddresBook(ad, 2);
+  printf("\n");
+  printTree(ad->tree);
+  printf("---------------\n");
+  bstFindAndRemove(ad, "3");
+  printf("\n");
+  printTree(ad->tree);
+  printBstNode(ad->tree);
+
+  bstFindAndRemove(ad, "5");
+  printf("\n");
+  printTree(ad->tree);
+  printf("aaaa");
+  printBstNode(ad->tree);
+
+  bstFindAndRemove(ad, "7");
+  printf("\n");
+  printTree(ad->tree);
+  printTree(ad->tree);
+  printTree(ad->tree);
+  bstFindAndRemove(ad, "6");
+  printf("\n");
+  printTree(ad->tree);
+  bstFindAndRemove(ad, "10");
+  printf("\n");
+  printTree(ad->tree);
+  bstFindAndRemove(ad, "8");
+  printf("\n");
+  printTree(ad->tree);
+  return 0;
+}
+
+
 BstNode* createBstNode(char* fname, char* lname, char* bdate, char* email, char* address, char* telephone){
   BstNode* node = (BstNode*)calloc(1, sizeof(BstNode));
   node->data[0] = fname;
@@ -63,6 +111,9 @@ void removeBstTree(BstNode* tree){
   if(tree != NULL){
     removeBstTree(tree->left);
     removeBstTree(tree->right);
+    for(int i = 0; i < 6; i++){
+      free(tree->data[i]);
+    }
     free(tree);
   }
 }
