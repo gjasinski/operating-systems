@@ -4,9 +4,11 @@
 
 #include "library.h"
 
+int main(void){
+  return 0;
+}
+
 BstNode* createBstNode(char* fname, char* lname, char* bdate, char* email, char* address, char* telephone){
-  addBstNode
-}{
   BstNode* node = (BstNode*)calloc(1, sizeof(BstNode));
   node->data[0] = fname;
   node->data[1] = lname;
