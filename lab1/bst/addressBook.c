@@ -27,7 +27,7 @@ int main(void) {
   printf("\n");
   printTree(ad->tree);
   printBstNode(ad->tree);
-
+/*
   bstFindAndRemove(ad, "5");
   printf("\n");
   printTree(ad->tree);
@@ -47,7 +47,7 @@ int main(void) {
   printTree(ad->tree);
   bstFindAndRemove(ad, "8");
   printf("\n");
-  printTree(ad->tree);
+  printTree(ad->tree);*/
   return 0;
 }
 
@@ -190,6 +190,13 @@ void bstRemoveNode(BstNode* proot){
     if(ptr) ptr->parent = proot->parent;
     if(proot->parent->left == proot) proot->parent->left = ptr;
         else proot->parent->right = ptr;
+
+    /*for(int i = 0; i < 6; i++){
+
+      if(proot && proot->data[i]){printf("%s", proot->data[i]); free(proot->data[i]);}
+      //printf("%s\n", proot->data[i]);
+    }*/
+    free(proot->data);
     free(proot);
 }
 
