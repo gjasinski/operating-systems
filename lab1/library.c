@@ -10,12 +10,19 @@ int main(void){
 
 BstNode* createBstNode(char* fname, char* lname, char* bdate, char* email, char* address, char* telephone){
   BstNode* node = (BstNode*)calloc(1, sizeof(BstNode));
-  node->data[0] = fname;
-  node->data[1] = lname;
-  node->data[2] = bdate;
-  node->data[3] = email;
-  node->data[4] = address;
-  node->data[5] = telephone;
+  node->data[0] = (char*)calloc(strlen(fname), sizeof(char));
+  node->data[1] = (char*)calloc(strlen(lname), sizeof(char));
+  node->data[2] = (char*)calloc(strlen(bdate), sizeof(char));
+  node->data[3] = (char*)calloc(strlen(email), sizeof(char));
+  node->data[4] = (char*)calloc(strlen(address), sizeof(char));
+  node->data[5] = (char*)calloc(strlen(telephone), sizeof(char));
+
+  memcpy(node->data[0], fname, strlen(fname));
+  memcpy(node->data[1], lname, strlen(lname));
+  memcpy(node->data[2], bdate, strlen(bdate));
+  memcpy(node->data[3], email, strlen(email));
+  memcpy(node->data[4], address, strlen(address));
+  memcpy(node->data[5], telephone, strlen(telephone));
   node->parent = node->left = node->right = NULL;
   return node;
 }
@@ -133,7 +140,9 @@ void bstRemoveNode(BstNode* proot){
     if(ptr) ptr->parent = proot->parent;
     if(proot->parent->left == proot) proot->parent->left = ptr;
         else proot->parent->right = ptr;
-
+    for(int i = 0; i < 6; i++){
+      free(proot->data[i]);
+    }
     free(proot);
 }
 
@@ -213,12 +222,19 @@ List* createList(){
 
 Node* createNode(char* fname, char* lname, char* bdate, char* email, char* address, char* telephone){
   Node* node = (Node*)calloc(1, sizeof(Node));
-  node->data[0] = fname;
-  node->data[1] = lname;
-  node->data[2] = bdate;
-  node->data[3] = email;
-  node->data[4] = address;
-  node->data[5] = telephone;
+  node->data[0] = (char*)calloc(strlen(fname), sizeof(char));
+  node->data[1] = (char*)calloc(strlen(lname), sizeof(char));
+  node->data[2] = (char*)calloc(strlen(bdate), sizeof(char));
+  node->data[3] = (char*)calloc(strlen(email), sizeof(char));
+  node->data[4] = (char*)calloc(strlen(address), sizeof(char));
+  node->data[5] = (char*)calloc(strlen(telephone), sizeof(char));
+
+  memcpy(node->data[0], fname, strlen(fname));
+  memcpy(node->data[1], lname, strlen(lname));
+  memcpy(node->data[2], bdate, strlen(bdate));
+  memcpy(node->data[3], email, strlen(email));
+  memcpy(node->data[4], address, strlen(address));
+  memcpy(node->data[5], telephone, strlen(telephone));
   node->next = node->prev = NULL;
   return node;
 }
@@ -237,6 +253,9 @@ void addContactToAddressBookList(List* list, char* fname, char* lname, char* bda
 void removeNode(Node* node){
   if(node->next) node->prev->next = node->next;
   if(node->next) node->next->prev = node->prev;
+  for(int i = 0; i < 6; i++){
+    free(node->data[i]);
+  }
   free(node);
 }
 
@@ -246,6 +265,9 @@ List* removeList(List* list){
     Node* current = list->first;
     while(current){
       next = current->next;
+      for(int i = 0; i < 6; i++){
+        if (current->data[i]) free(current->data[i]);
+      }
       free(current);
       current = next;
     }
