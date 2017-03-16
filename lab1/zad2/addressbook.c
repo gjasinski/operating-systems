@@ -4,7 +4,7 @@
 
 #include "addressbook.h"
 
-const int  CONTACT_SIZE = 6;
+const int CONTACT_SIZE = 6;
 
 contact_t* create_contact(char* fname, char* lname, char* bdate, char* email, char* address, char* telephone){
   contact_t* contact = (contact_t*)calloc(1, sizeof(contact_t));
