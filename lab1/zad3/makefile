@@ -23,31 +23,31 @@ staticlib: $(OBJECT_FILES)
 	ar rcs libad.a $(OBJECT_FILES)
 
 static: staticlib
-	@$(CC) $(LINKERFLAGS) main.c  -o static_main $(CFLAGS) -static -L. -lad
+	@$(CC) $(LINKERFLAGS) main.c  -o static $(CFLAGS) -static -L. -lad
 
 dynamic: sharedlib
-	@$(CC) $(LINKERFLAGS) main.c -o dynamic_main $(CFLAGS) -L. -lad
+	@$(CC) $(LINKERFLAGS) main.c -o dynamic $(CFLAGS) -L. -lad
 
 dll: sharedlib
-	@$(CC) main.c $(CFLAGS) -o dll_main -ldl -DDLL
+	@$(CC) main.c $(CFLAGS) -o dll -ldl -DDLL
 
-compile_o1: $(SOURCE_FILES)
+c_o1: $(SOURCE_FILES)
 		$(CC) -c $(CFLAGS) -O1 $^
 
-compile_o2: $(SOURCE_FILES)
+c_o2: $(SOURCE_FILES)
 		$(CC) -c $(CFLAGS) -O2 $^
 
-compile_o3: $(SOURCE_FILES)
+c_o3: $(SOURCE_FILES)
 		$(CC) -c $(CFLAGS) -O3 $^
 
 run_dynamic: dynamic
-	./dynamic_main
+	./dynamic
 
 run_static: static
-	./static_main
+	./static
 
 run_dll: dll
-	./dll_main
+	./dll
 
 clean:
 	@rm -f *.o
@@ -57,4 +57,4 @@ clean:
 	@rm -f static_main
 	@rm -f dll_main
 
-.PHONY: all shared static compile_o1 compile_o2 compile_o3 clean
+.PHONY: all shared static c_o1 c_o2 c_o3 clean
