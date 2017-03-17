@@ -3,7 +3,6 @@
 #include <string.h>
 
 #include "list.h"
-//#include "addressbook.c"
 
 list_t* create_list(){
   list_t* list = (list_t*)calloc(1, sizeof(list));
