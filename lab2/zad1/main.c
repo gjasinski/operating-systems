@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
 }
 
 void lib_generate(char* path_name, int records, int record_size){
-    FILE* file_dev_rand = fopen("/dev/random", "r");
+    FILE* file_dev_rand = fopen("/dev/urandom", "r");
     FILE* file_new_file = fopen(path_name, "w+");
     if(file_dev_rand == NULL || file_new_file == NULL){
         printf("lib_generator - open file - error");
@@ -104,8 +104,8 @@ void lib_sort(char* path_name, int records, int record_size){
         exit(1);
     }
 
-    char* c1 = (char*)calloc(1, sizeof(char));
-    char* c2 = (char*)calloc(1, sizeof(char));
+    char c1[1];
+    char c2[1];
     for(int i = 0; i < records; i++){
         for(int j = 0; j < records - 1 - i; j++){
             lib_seek(file_to_sort, j * record_size, SEEK_SET);
@@ -117,9 +117,6 @@ void lib_sort(char* path_name, int records, int record_size){
             }
         }
     }
-
-    free(c1);
-    free(c2);
     fclose(file_to_sort);
 }
 
@@ -147,6 +144,7 @@ void lib_write(FILE *pFILE, char* buff, int record_size) {
         printf("lib_generate - write - error\n");
         exit(1);
     }
+    fflush(pFILE);
 }
 
 void lib_swap(FILE *pFILE, int i, int j, int record_size) {
@@ -169,7 +167,7 @@ void lib_swap(FILE *pFILE, int i, int j, int record_size) {
 
 void sys_generate(char* path_name, int records, int record_size){
     srand(time(NULL));
-    int file_dev_rand = open("/dev/random", O_RDONLY);
+    int file_dev_rand = open("/dev/urandom", O_RDONLY);
     int file_new_file = open(path_name, O_WRONLY | O_CREAT | O_TRUNC, 0666);
 
     if (file_dev_rand == -1 || file_new_file == -1){
@@ -181,10 +179,8 @@ void sys_generate(char* path_name, int records, int record_size){
         sys_read(file_dev_rand, buff, record_size);
 
         for(int j = 0; j < record_size; j++){
-            buff[j] = (char)(buff[j] % 74 + 48);
-            //buff[j] = (char)(rand() % 25 + 97);
+            buff[j] = (char)(buff[j] % 25 + 97);
         }
-        buff[record_size-1]='\n';
         buff[record_size] = '\0';
         sys_write(file_new_file, buff, record_size);
     }
@@ -215,8 +211,8 @@ void sys_sort(char* path_name, int records, int record_size){
         printf("sys_sort - open file - error");
         exit(1);
     }
-    char* c1 = (char*)calloc(1, sizeof(char));
-    char* c2 = (char*)calloc(1, sizeof(char));
+    char c1[1];
+    char c2[1];
     for(int i = 0; i < records; i++){
         for(int j = 0; j < records - 1 - i; j++){
             sys_seek(file_to_sort, j * record_size, SEEK_SET);
@@ -224,14 +220,10 @@ void sys_sort(char* path_name, int records, int record_size){
             sys_seek(file_to_sort, (j + 1 ) * record_size, SEEK_SET);
             sys_read(file_to_sort, c2, sizeof(char));
             if(c2[0] < c1[0]) {
-                printf("%c %c", c1[0], c2[0]);
                 sys_swap(file_to_sort, j, j + 1, record_size);
             }
         }
     }
-
-    free(c1);
-    free(c1);
     sys_close_file(file_to_sort);
 }
 
