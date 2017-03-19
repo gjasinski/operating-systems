@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sys/times.h>
+#include <string.h>
 
 void lib_swap(FILE *pFILE, int i, int j, int record_size);
 void lib_seek(FILE *pFILE, int offset, int origin);
@@ -33,22 +34,22 @@ double system_start;
 int main(int argc, char* argv[]) {
     char* info = "Usage: <sys|lib> <generate|shuffle|sort> <path file> <records> <size of records>\n";
     if(argc != 6) {
-        printf(info);
+        printf("%s\n",info);
         return -1;
     }
     char* filename = argv[3];
     int records = (int)strtol(argv[4], NULL, 10);
     int size_of_records = (int)strtol(argv[5],NULL, 10);
     init_time();
-    if(argv[1] == "lib"){
-        if(argv[2] == "generate") lib_generate(filename, records, size_of_records);
-        if(argv[2] == "shuffle") lib_shuffle(filename, records, size_of_records);
-        if(argv[2] == "sort") lib_sort(filename, records, size_of_records);
+    if(strcmp(argv[1], "lib") == 0){
+        if(strcmp(argv[2], "generate") == 0) lib_generate(filename, records, size_of_records);
+        if(strcmp(argv[2], "shuffle") == 0) lib_shuffle(filename, records, size_of_records);
+        if(strcmp(argv[2], "sort") == 0) lib_sort(filename, records, size_of_records);
     }
-    if(argv[1] == "sys"){
-        if(argv[2] == "generate") sys_generate(filename, records, size_of_records);
-        if(argv[2] == "shuffle") sys_shuffle(filename, records, size_of_records);
-        if(argv[2] == "sort") sys_sort(filename, records, size_of_records);
+    if(strcmp(argv[1], "sys") == 0){
+        if(strcmp(argv[2], "generate") == 0) sys_generate(filename, records, size_of_records);
+        if(strcmp(argv[2], "shuffle") == 0) sys_shuffle(filename, records, size_of_records);
+        if(strcmp(argv[2], "sort") == 0) sys_sort(filename, records, size_of_records);
     }
     get_and_print_time();
     return 0;
