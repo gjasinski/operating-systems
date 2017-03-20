@@ -1,0 +1,21 @@
+DLL:
+ -  - Times from start: real = 0.016193, user = 0.000002, system = 0.000000
+ o1 - Times from start: real = 0.015759, user = 0.000001, system = 0.000000
+ o2 - Times from start: real = 0.015697, user = 0.000001, system = 0.000000
+ o3 - Times from start: real = 0.015534, user = 0.000001, system = 0.000000
+
+Dzielona:
+  - - Times from start: real = 0.019436, user = 0.000002, system = 0.000000
+ o1 - Times from start: real = 0.018144, user = 0.000002, system = 0.000000
+ o2 - Times from start: real = 0.016064, user = 0.000001, system = 0.000000
+ o3 - Times from start: real = 0.015857, user = 0.000002, system = 0.000000
+
+ Statyczna:
+ -  - Times from start: real = 0.015558, user = 0.000001, system = 0.000000
+ o1 - Times from start: real = 0.015454, user = 0.000001, system = 0.000000
+ o2 - Times from start: real = 0.016244, user = 0.000002, system = 0.000000
+ o3 - Times from start: real = 0.015550, user = 0.000001, system = 0.000000
+
+ Największe różnice optymalizacji widać w bibliotece dzielonej.
+ W bibliotece DLL widać niedużą optymalizację, a w bibliotece stayczniej nie widać optymalizacji.
+ Można zauważyć że biblioteka dzielona w optymalizacji -O3 dochodzi do czasów działania biblioteki statycznej.

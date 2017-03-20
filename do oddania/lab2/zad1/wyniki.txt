@@ -1,0 +1,108 @@
+4 bajty:
+  funkcje biblioteczne:
+    student@ubuntu:~/operating-systems/lab2/zad1$ ./main lib generate nowy_plik.txt 3000 4
+    Times: real = 0.077812, user = 0.000000, system = 0.000007
+    Times from start: real = 0.077812, user = 0.000000, system = 0.000007
+
+    student@ubuntu:~/operating-systems/lab2/zad1$ ./main lib shuffle nowy_plik.txt 3000 4
+    Times: real = 0.023342, user = 0.000000, system = 0.000002
+    Times from start: real = 0.023342, user = 0.000000, system = 0.000002
+
+    student@ubuntu:~/operating-systems/lab2/zad1$ ./main lib sort nowy_plik.txt 3000 4
+    Times: real = 21.050283, user = 0.000444, system = 0.001660
+    Times from start: real = 21.050283, user = 0.000444, system = 0.001660
+
+  funkcje systemowe:
+    student@ubuntu:~/operating-systems/lab2/zad1$ ./main sys generate nowy_plik.txt 3000 4
+    Times: real = 0.014554, user = 0.000000, system = 0.000001
+    Times from start: real = 0.014554, user = 0.000000, system = 0.000001
+
+    student@ubuntu:~/operating-systems/lab2/zad1$ ./main sys shuffle nowy_plik.txt 3000 4
+    Times: real = 0.017240, user = 0.000000, system = 0.000001
+    Times from start: real = 0.017240, user = 0.000000, system = 0.000001
+
+    student@ubuntu:~/operating-systems/lab2/zad1$ ./main sys sort nowy_plik.txt 3000 4
+    Times: real = 19.751094, user = 0.000216, system = 0.001758
+    Times from start: real = 19.751094, user = 0.000216, system = 0.001758
+
+512 bajtow:
+  funkcje biblioteczne:
+    student@ubuntu:~/operating-systems/lab2/zad1$ ./main lib generate nowy_plik.txt 3000 512
+    Times: real = 0.214736, user = 0.000001, system = 0.000020
+    Times from start: real = 0.214736, user = 0.000001, system = 0.000020
+
+    student@ubuntu:~/operating-systems/lab2/zad1$ ./main lib shuffle nowy_plik.txt 3000 512
+    Times: real = 0.041697, user = 0.000000, system = 0.000003
+    Times from start: real = 0.041697, user = 0.000000, system = 0.000003
+
+    student@ubuntu:~/operating-systems/lab2/zad1$ ./main lib sort nowy_plik.txt 3000 512
+    Times: real = 19.295738, user = 0.000442, system = 0.001487
+    Times from start: real = 19.295738, user = 0.000442, system = 0.001487
+  funkcje systemowe:
+    student@ubuntu:~/operating-systems/lab2/zad1$ ./main sys generate nowy_plik.txt 3000 512
+    Times: real = 0.233002, user = 0.000002, system = 0.000021
+    Times from start: real = 0.233002, user = 0.000002, system = 0.000021
+
+    student@ubuntu:~/operating-systems/lab2/zad1$ ./main sys shuffle nowy_plik.txt 3000 512
+    Times: real = 0.016880, user = 0.000000, system = 0.000001
+    Times from start: real = 0.016880, user = 0.000000, system = 0.000001
+
+    student@ubuntu:~/operating-systems/lab2/zad1$ ./main sys sort nowy_plik.txt 3000 512
+    Times: real = 17.743803, user = 0.000230, system = 0.001544
+    Times from start: real = 17.743803, user = 0.000230, system = 0.001544
+
+4096 bajtow:
+  funkcje biblioteczne:
+    student@ubuntu:~/operating-systems/lab2/zad1$ ./main lib generate nowy_plik.txt 2000 4096
+    Times: real = 1.104886, user = 0.000007, system = 0.000103
+    Times from start: real = 1.104886, user = 0.000007, system = 0.000103
+
+    student@ubuntu:~/operating-systems/lab2/zad1$ ./main lib shuffle nowy_plik.txt 2000 4096
+    Times: real = 0.019797, user = 0.000000, system = 0.000002
+    Times from start: real = 0.019797, user = 0.000000, system = 0.000002
+
+    student@ubuntu:~/operating-systems/lab2/zad1$ ./main lib sort nowy_plik.txt 2000 4096
+    Times: real = 13.547017, user = 0.000263, system = 0.001091
+    Times from start: real = 13.547017, user = 0.000263, system = 0.001091
+
+  funkcje systemowe:
+    student@ubuntu:~/operating-systems/lab2/zad1$ ./main sys generate nowy_plik.txt 2000 4096
+    Times: real = 1.102291, user = 0.000008, system = 0.000101
+    Times from start: real = 1.102291, user = 0.000008, system = 0.000101
+
+    student@ubuntu:~/operating-systems/lab2/zad1$ ./main sys shuffle nowy_plik.txt 2000 4096
+    Times: real = 0.016145, user = 0.000000, system = 0.000001
+    Times from start: real = 0.016145, user = 0.000000, system = 0.000001
+
+    student@ubuntu:~/operating-systems/lab2/zad1$ ./main sys sort nowy_plik.txt 2000 4096
+    Times: real = 11.132156, user = 0.000158, system = 0.000954
+    Times from start: real = 11.132156, user = 0.000158, system = 0.000954
+
+
+8192 bajtow:
+  funkcje biblioteczne:
+    student@ubuntu:~/operating-systems/lab2/zad1$ ./main lib generate nowy_plik.txt 2000 8192
+    Times: real = 2.166288, user = 0.000013, system = 0.000203
+    Times from start: real = 2.166288, user = 0.000013, system = 0.000203
+
+    student@ubuntu:~/operating-systems/lab2/zad1$ ./main lib shuffle nowy_plik.txt 2000 8192
+    Times: real = 0.040983, user = 0.000000, system = 0.000003
+    Times from start: real = 0.040983, user = 0.000000, system = 0.000003
+
+    student@ubuntu:~/operating-systems/lab2/zad1$ ./main lib sort nowy_plik.txt 2000 8192
+    Times: real = 20.873020, user = 0.000342, system = 0.001744
+    Times from start: real = 20.873020, user = 0.000342, system = 0.001744
+
+
+  funkcje systemowe:
+    student@ubuntu:~/operating-systems/lab2/zad1$ ./main sys generate nowy_plik.txt 2000 8192
+    Times: real = 2.490587, user = 0.000011, system = 0.000237
+    Times from start: real = 2.490587, user = 0.000011, system = 0.000237
+
+    student@ubuntu:~/operating-systems/lab2/zad1$ ./main sys shuffle nowy_plik.txt 2000 8192
+    Times: real = 0.034951, user = 0.000000, system = 0.000003
+    Times from start: real = 0.034951, user = 0.000000, system = 0.000003
+
+    student@ubuntu:~/operating-systems/lab2/zad1$ ./main sys sort nowy_plik.txt 2000 8192
+    Times: real = 21.018991, user = 0.000250, system = 0.001851
+    Times from start: real = 21.018991, user = 0.000250, system = 0.001851

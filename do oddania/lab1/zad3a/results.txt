@@ -1,0 +1,9 @@
+Książka adresowa na drzewie:
+  czas działania całego programu najkrótszy był dla statycznie ładowanych bibliotek, potem dynamicznie ładwoanych przez program i na końcu przez dzialone biblioteki.
+
+Książka adresowa na liście:
+  książka została najszybciej posortowana została w statycznie dołączanych bibliotekach, potem w dynamicznie ładowanych przez program, a najdłużej przez dzielone bilioteki.
+  Tak samo jest w przypadku wyszukiwania. Poczas usuwania też najszybciej usunęła statyczna bilbioteka, druga była dzielona a trzecia dll.
+
+  Całkowity czas działania programu:
+  Najszybciej: statyczna biblioteka, potem dynamicznie ładowana przez program i na końcu dzielona.
