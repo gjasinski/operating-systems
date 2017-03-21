@@ -1,0 +1,23 @@
+ograniczenie na dlugosc lini
+nie trzeba obslugiwac cudzyslowow (nie utradniac zycia)
+przodek musi czekac na potomka*
+wait lub wait pid moze sie skonczyc
+
+sleep(100) prowadzacy wysyla kill do interpretera  W IF EXIT
+po waicie trzeba sprawdzic co zwrocil proces potomny
+W_EXIT_STATUS
+
+ls -l
+1. nie polecany wlsany interprer path
+2. funckja z rodziny exec ktora sama potrafi sobie poradzic zmienna srodowiskowa path
+
+2.
+ograniczenie moiekkie: user moze zwiekszac zmniejszac max do twardego
+ograniczneie twarde - user  nie moze wiekszyc ale moze zmniejszyc
+setrlimit - ograniczenie twarde
+
+ulimit -a -H
+
+while(1)
+
+getrusage z flaga
