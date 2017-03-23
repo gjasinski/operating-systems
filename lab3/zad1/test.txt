@@ -1,0 +1,10 @@
+#TestFile ./ala.txt
+./demo TestFile
+#TestFile
+ls -l
+ps -al
+#s../test_file
+echo sleep
+./demo_sleep 4
+echo niesleep
+./demo_sleep 2
