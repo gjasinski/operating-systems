@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200112L
 #include <stdio.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -15,7 +16,7 @@
 int read_file_to_buffer(int file_desc, char* buff);
 int read_line(char* buffer, char* line, int position);
 void environment_variable_handler(char* line);
-int thread_handler(char* line, unsigned int rlimit_cpu, unsigned int rlimit_as);
+void thread_handler(char* line, unsigned int rlimit_cpu, unsigned int rlimit_as);
 int set_limit(int resource, unsigned int value);
 void print_usage();
 
@@ -91,7 +92,7 @@ void environment_variable_handler(char* line){
     }
 }
 
-int thread_handler(char* line, unsigned int rlimit_cpu, unsigned int rlimit_as){
+void thread_handler(char* line, unsigned int rlimit_cpu, unsigned int rlimit_as){
     unsigned int count = 0;
     for(int i = 0; i < strlen(line); i++){
         if (line[i] == ' '){
@@ -108,6 +109,7 @@ int thread_handler(char* line, unsigned int rlimit_cpu, unsigned int rlimit_as){
             count++;
         }
     }
+
     int return_value;
     int pid = fork();
     if(pid == 0) {
@@ -128,14 +130,12 @@ int thread_handler(char* line, unsigned int rlimit_cpu, unsigned int rlimit_as){
         if(WIFSTOPPED(return_value)){
             printf("Stopped %d\n, ", WSTOPSIG(return_value));
         }
-        if(WIFEXITED(return_value))
-            if(WEXITSTATUS(return_value) == 0) return 0;
-            else {
-                printf("%d\n", WEXITSTATUS(return_value));
+        if(WIFEXITED(return_value)){
+            if(WEXITSTATUS(return_value) != 0){
                 printf("Abnormal exit, command = %s, signal number = %d\n", line, WEXITSTATUS(return_value));
                 exit(WEXITSTATUS(return_value));
             }
-
+        }
     }
 }
 

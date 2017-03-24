@@ -1,9 +1,11 @@
+#define _POSIX_C_SOURCE 200112L
 #include <stdio.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/wait.h>
+
 
 #define LINE_MAX 100
 #define BUFFER_SIZE 200
