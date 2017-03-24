@@ -21,3 +21,19 @@ ulimit -a -H
 while(1)
 
 getrusage z flaga
+
+#include <stdlib.h>
+char * g e t e n v ( c o n s t char *name);
+
+#include < s t d l i b . h >
+i n t putenv {const char *str) ;
+i n t setenv (const char *name, const char *value, i n t rewrite) ;
+Przekazują: 0, jeśli wszystko w porządku; wartość niezerową, jeśli wystąpił błąd
+void unsetenv(const char *name);
+
+
+#includetinclude<sys/types.h>
+<unistd.h>
+pid_tfork(void);
+Przekazuje: 0 do procesu potomnego, identyfikator procesu potomnego
+do procesu macierzystego; - 1 , jeśli wystąpił błąd
