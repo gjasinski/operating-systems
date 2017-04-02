@@ -1,0 +1,8 @@
+#ala xyz
+./demo ala
+#ala makota
+./demo ala
+#ala
+./demo ala
+./demo_sleep 5
+ls -l

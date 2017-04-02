@@ -8,7 +8,7 @@
 
 
 #define LINE_MAX 100
-#define BUFFER_SIZE 200
+#define BUFFER_SIZE 1048576
 
 int read_file_to_buffer(int file_desc, char* buff);
 int read_line(char* buffer, char* line, int position);
@@ -39,6 +39,7 @@ int main(int argc, char* argv[]) {
             free(line);
         }
     }while(buffered_chars == BUFFER_SIZE);
+    free(buffer);
     return 0;
 }
 
