@@ -1,3 +1,4 @@
+#define _BSD_SOURCE || _XOPEN_SOURCE >= 500
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -89,6 +90,7 @@ void handle_sigint(int sig, siginfo_t *siginfo, void *context){
             printf("%s \n", "sigqueue - error");
         }
     }
+    exit(SIGINT);
 }
 
 void set_sig_handler() {
