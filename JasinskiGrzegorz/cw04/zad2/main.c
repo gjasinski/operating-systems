@@ -77,7 +77,6 @@ void handle_sigusr1(int sig, siginfo_t *siginfo, void *context){
     if(children_signaled > M){
         kill(children_signaled_array[children_signaled - 1], SIGUSR2);
     }
-    set_sigusr1_handler();
     cont  = 1;
 }
 
@@ -93,7 +92,6 @@ void set_sigusr1_handler() {
 void handle_sigusr2(int sig, siginfo_t *siginfo, void *context){
     printf("Received signal: %d from %d\n", sig, siginfo->si_pid);
     fflush(stdout);
-    set_sigusr2_handler();
 }
 
 void handle_sigreal(int sig, siginfo_t *siginfo, void *context){
