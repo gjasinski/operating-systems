@@ -30,7 +30,9 @@ int main(int argc, char* argv[]) {
         }
     }
     for(int i = 0; i < L; i++){
+        usleep(5000);
         send_signal();
+        usleep(5000);
     }
     send_kill_signal();
     int return_value;
