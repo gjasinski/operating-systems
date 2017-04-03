@@ -14,15 +14,11 @@ int children_signaled;
 int children_created;
 int M;
 int cont;
+
 void set_sigusr1_handler() ;
-
-void print_signal_info(int pid, int signal);
-
 void set_sigusr2_handler() ;
-
 void create_childrens(int N);
-
-void set_sigint_handler() ;
+void set_sig_handler() ;
 
 int main(int argc, char* argv[]) {
     if(argc != 3){
@@ -34,7 +30,7 @@ int main(int argc, char* argv[]) {
     children_signaled = children_created = 0;
     children_array = (int*)calloc(N, sizeof(int));
     children_signaled_array = (int*)calloc(N, sizeof(int));
-    set_sigint_handler();
+    set_sig_handler();
     set_sigusr1_handler();
     set_sigusr2_handler();
     create_childrens(N);
@@ -42,7 +38,7 @@ int main(int argc, char* argv[]) {
     int return_value;
     for(int i = 0; i< N; i++){
         waitpid(children_array[i], &return_value, 0);
-        printf("--%d %d\n",i, return_value);
+        printf("Process finished:%d  code:%d\n",children_array[i], return_value);
     }
     return 0;
 }
@@ -69,13 +65,11 @@ void create_childrens(int N){
 
 
 void handle_sigusr1(int sig, siginfo_t *siginfo, void *context){
-  set_sigusr1_handler();
-  printf("YOLOODEBRALEM   %d\n", children_signaled);
-    fflush(stdout);
     children_signaled_array[children_signaled] = siginfo->si_pid;
+    printf("Received signal: %d from %d\n", sig, children_signaled_array[children_signaled]);
+    fflush(stdout);
     children_signaled++;
     if(children_signaled == M){
-        printf("\n\n=======$$tsfnsdjgbjshbdjg$\n\n");
         for(int i = 0; i < children_signaled; i++){
             kill(children_signaled_array[i], SIGUSR2);
         }
@@ -85,7 +79,6 @@ void handle_sigusr1(int sig, siginfo_t *siginfo, void *context){
     }
     set_sigusr1_handler();
     cont  = 1;
-//    print_signal_info(children_signaled_array[children_signaled - 1], sig);
 }
 
 void set_sigusr1_handler() {
@@ -98,12 +91,14 @@ void set_sigusr1_handler() {
 }
 
 void handle_sigusr2(int sig, siginfo_t *siginfo, void *context){
-    print_signal_info(siginfo->si_pid, sig);
+    printf("Received signal: %d from %d\n", sig, siginfo->si_pid);
+    fflush(stdout);
     set_sigusr2_handler();
 }
 
 void handle_sigreal(int sig, siginfo_t *siginfo, void *context){
-    printf("odebralem real\n");
+    printf("Received signal: %d from %d\n", sig, siginfo->si_pid);
+    fflush(stdout);
 }
 
 void set_sigusr2_handler() {
@@ -121,7 +116,7 @@ void handle_sigint(int sig, siginfo_t *siginfo, void *context){
     exit(9);
 }
 
-void set_sigint_handler() {
+void set_sig_handler() {
     struct sigaction act;
     act.sa_sigaction = &handle_sigint;
     act.sa_flags = SA_SIGINFO;
@@ -130,9 +125,4 @@ void set_sigint_handler() {
     for(int i = 0; i < 33; i++){
       sigaction(SIGRTMIN + i, &act, NULL);
     }
-}
-
-
-void print_signal_info(int pid, int signal){
-    printf("Child: %d - signal: %d", pid, signal);
 }
