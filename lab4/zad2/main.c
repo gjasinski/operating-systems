@@ -1,17 +1,19 @@
+#define _POSIX_C_SOURCE 200112L
+#define _XOPEN_SOURCE 700
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
 #include <wait.h>
+#include <sys/types.h>
 
 int* children_array;
 int* children_signaled_array;
 int children_signaled;
 int children_created;
 int M;
-int odebrane;
-
+int cont;
 void set_sigusr1_handler() ;
 
 void print_signal_info(int pid, int signal);
@@ -23,7 +25,6 @@ void create_childrens(int N);
 void set_sigint_handler() ;
 
 int main(int argc, char* argv[]) {
-    odebrane=0;
     if(argc != 3){
         printf("%s\n", "main <N - childrens> <M - start approve>");
         return 0;
@@ -47,10 +48,11 @@ int main(int argc, char* argv[]) {
 }
 
 void create_childrens(int N){
-    for(children_created; children_created < N; children_created++){
+    for(children_created = 0; children_created < N; children_created++){
         int pid = fork();
+        char** arg = (char**)calloc(0, sizeof(char*));
         if(pid == 0){
-            int res = execvp("./child", NULL);
+            int res = execvp("./child", arg);
             if(res == -1){
                 printf("%s", "execvp error\n");
                 exit(0);
@@ -58,17 +60,22 @@ void create_childrens(int N){
         }
         else{
             children_array[children_created] = pid;
+            cont = 0;
+            while(cont == 0){
+            }
         }
     }
 }
 
 
 void handle_sigusr1(int sig, siginfo_t *siginfo, void *context){
-    odebrane++;
+  set_sigusr1_handler();
+  printf("YOLOODEBRALEM   %d\n", children_signaled);
+    fflush(stdout);
     children_signaled_array[children_signaled] = siginfo->si_pid;
     children_signaled++;
     if(children_signaled == M){
-        printf("\n\n=======$$%^&^%$%^&*&^%$\n\n");
+        printf("\n\n=======$$tsfnsdjgbjshbdjg$\n\n");
         for(int i = 0; i < children_signaled; i++){
             kill(children_signaled_array[i], SIGUSR2);
         }
@@ -77,8 +84,7 @@ void handle_sigusr1(int sig, siginfo_t *siginfo, void *context){
         kill(children_signaled_array[children_signaled - 1], SIGUSR2);
     }
     set_sigusr1_handler();
-    printf("YOLOODEBRALEM   %d\n", odebrane);
-    fflush(stdout);
+    cont  = 1;
 //    print_signal_info(children_signaled_array[children_signaled - 1], sig);
 }
 
@@ -94,6 +100,10 @@ void set_sigusr1_handler() {
 void handle_sigusr2(int sig, siginfo_t *siginfo, void *context){
     print_signal_info(siginfo->si_pid, sig);
     set_sigusr2_handler();
+}
+
+void handle_sigreal(int sig, siginfo_t *siginfo, void *context){
+    printf("odebralem real\n");
 }
 
 void set_sigusr2_handler() {
@@ -116,7 +126,10 @@ void set_sigint_handler() {
     act.sa_sigaction = &handle_sigint;
     act.sa_flags = SA_SIGINFO;
     sigaction(SIGINT, &act, NULL);
-
+    act.sa_sigaction = &handle_sigreal;
+    for(int i = 0; i < 33; i++){
+      sigaction(SIGRTMIN + i, &act, NULL);
+    }
 }
 
 
