@@ -30,15 +30,19 @@ int main(int argc, char* argv[]) {
             exit(0);
         }
     }
+    sleep(1);
     for(int i = 0; i < L; i++){
-        usleep(5000);
+        //usleep(5000);
         send_signal();
-        usleep(5000);
+      //  usleep(5000);
     }
     send_kill_signal();
     int return_value;
     waitpid(pid, &return_value, 0);
+  //  sleep(4);
     printf("%s %d\n%s %d \n", "Signal sended: ", signal_sended, "Signal received: ", signal_received);
+    fflush(stdout);
+
     return 0;
 }
 
@@ -52,6 +56,7 @@ void send_signal(){
         val.sival_int = SIGUSR1;
         if(sigqueue(child_pid, SIGUSR1, val) != 0){
             printf("%s \n", "sigqueue - error");
+            fflush(stdout);
         }
     }
     if(T == 3){
@@ -68,6 +73,7 @@ void send_kill_signal(){
         val.sival_int = SIGUSR2;
         if(sigqueue(child_pid, SIGUSR2, val) != 0){
             printf("%s \n", "sigqueue - error");
+            fflush(stdout);
         }
     }
     if(T == 3){
@@ -88,6 +94,7 @@ void handle_sigint(int sig, siginfo_t *siginfo, void *context){
         val.sival_int = SIGINT;
         if(sigqueue(child_pid, SIGINT, val) != 0){
             printf("%s \n", "sigqueue - error");
+            fflush(stdout);
         }
     }
     exit(SIGINT);
