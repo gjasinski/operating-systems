@@ -1,0 +1,1 @@
+cat /etc/passwd | cut -d : -f 7 | sort | uniq -c | tail | head| tail| head| head| tail| head| tail| head| head| tail| head| tail| head| head| tail| head| tail| head| head| tail| head| tail| head| head| tail
