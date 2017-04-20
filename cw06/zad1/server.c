@@ -1,26 +1,15 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/msg.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <time.h>
-#include <memory.h>
-#include <errno.h>
-
 #include "common.h"
 #define MAX_CLIENTS 10
 
 int clients[MAX_CLIENTS][2];
 int connected_clients;
-int MSGBUF_SIZE  = sizeof(struct msgbuf) - sizeof(long);
+int MSGBUF_SIZE  = sizeof(struct msg_b) - sizeof(long);
 int terminate_client = 0;
 
-void register_client(struct msgbuf buf);
-void echo_service(struct msgbuf buf);
-void to_upper_case_service(struct msgbuf buf);
-void get_server_time_service(struct msgbuf buf);
+void register_client(struct msg_b buf);
+void echo_service(struct msg_b buf);
+void to_upper_case_service(struct msg_b buf);
+void get_server_time_service(struct msg_b buf);
 void terminate_server_service();
 
 void remove_queue(key_t key);
@@ -36,7 +25,7 @@ int main() {
         exit(-1);
     }
 
-    struct msgbuf msg;
+    struct msg_b msg;
     printf("Queue created - listening\n");
     while(terminate_client == 0){
         sleep(1);
@@ -61,7 +50,7 @@ void remove_queue(key_t key){
     exit(0);
 }
 
-void register_client(struct msgbuf buf){
+void register_client(struct msg_b buf){
     if(connected_clients >= MAX_CLIENTS){
         printf("Can't add new client");
         return;
@@ -97,7 +86,7 @@ int find_client(int pid){
     return queue_id;
 }
 
-void echo_service(struct msgbuf buf){
+void echo_service(struct msg_b buf){
     int queue_id = find_client(buf.pid);
     if(queue_id == -1){
         printf("Client's queue not found\n");
@@ -120,7 +109,7 @@ char* get_time(){
     return asctime (timeinfo);
 }
 
-void get_server_time_service(struct msgbuf buf){
+void get_server_time_service(struct msg_b buf){
     int queue_id = find_client(buf.pid);
     if(queue_id == -1){
         printf("Client's queue not found");
@@ -145,7 +134,7 @@ void to_upper(char* string){
     }
 }
 
-void to_upper_case_service(struct msgbuf buf){
+void to_upper_case_service(struct msg_b buf){
     int queue_id = find_client(buf.pid);
     if(queue_id == -1){
         printf("Client's queue not found");

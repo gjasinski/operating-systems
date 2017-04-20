@@ -1,21 +1,9 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/msg.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <time.h>
-#include <memory.h>
-#include <errno.h>
-#include <signal.h>
-
 #include "common.h"
 #define MAX_CLIENTS 10
 
 int clients[MAX_CLIENTS][2];
 int connected_clients;
-int MSGBUF_SIZE  = sizeof(struct msgbuf) - sizeof(long);
+int MSGBUF_SIZE  = sizeof(struct msg_b) - sizeof(long);
 int client_id;
 int client_queue;
 pid_t listener_pid;
@@ -44,7 +32,7 @@ int main(){
     send_handshake(server_queue, key_client);
     receive_handshake(client_queue);
     fflush(stdout);
-    struct msgbuf msg;
+    struct msg_b msg;
     char c;
     listener_pid = fork();
     atexit(clean);
@@ -73,7 +61,7 @@ void clean(){
     exit(0);
 }
 void send_msg(int queue_server, int mtype, char *mtext){
-    struct msgbuf msg;
+    struct msg_b msg;
     msg.mtype = mtype;
     msg.pid = getpid();
     strcpy(msg.mtext, mtext);
@@ -89,7 +77,7 @@ void send_handshake(int queue_server, int key){
 }
 
 void receive_handshake(int queue_server){
-    struct msgbuf msg;
+    struct msg_b msg;
     sleep(1);
     int res = msgrcv(queue_server, &msg, MSGBUF_SIZE, 0, IPC_NOWAIT);
     if(res >= 0) {
@@ -110,7 +98,7 @@ void remove_queue(key_t key){
 }
 
 void listen(int client_queue, pid_t msg_id){
-    struct msgbuf msg;
+    struct msg_b msg;
     while(1){
         sleep(1);
         int res = msgrcv(client_queue, &msg, MSGBUF_SIZE, 0, IPC_NOWAIT);
