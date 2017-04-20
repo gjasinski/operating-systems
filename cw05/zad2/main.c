@@ -1,9 +1,11 @@
+#define _BSD_SOURCE
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <memory.h>
+#include <stdio.h>
 
 #define MAX_BUF 50
 

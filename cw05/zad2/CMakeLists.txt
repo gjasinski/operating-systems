@@ -10,5 +10,4 @@ add_executable(master ${SOURCE_FILES})
 set(SOURCE_FILES_CHILD child.c)
 add_executable(slave ${SOURCE_FILES_CHILD})
 
-set(SOURCE_FILES_SUP supervisor.c)
-add_executable(sup ${SOURCE_FILES_SUP})
+target_link_libraries(slave m)

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <wait.h>
+#include <sys/types.h>
 
 #define MAX_ARGS 10
 #define MAX_INPUT 1000
