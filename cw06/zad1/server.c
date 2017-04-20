@@ -10,8 +10,8 @@ void register_client(struct msg_b buf);
 void echo_service(struct msg_b buf);
 void to_upper_case_service(struct msg_b buf);
 void get_server_time_service(struct msg_b buf);
-void terminate_server_service();
-
+void terminate_server_service(struct msg_b buf);
+void terminate_queue_service(struct msg_b buf);
 void remove_queue(key_t key);
 
 int main() {
@@ -36,7 +36,8 @@ int main() {
             if(msg.mtype == ECHO) echo_service(msg);
             if(msg.mtype == TO_UPPER_CASE) to_upper_case_service(msg);
             if(msg.mtype == GET_SERVER_TIME) get_server_time_service(msg);
-            if(msg.mtype == TERMINATE_SERVER) terminate_server_service();
+            if(msg.mtype == TERMINATE_SERVER) terminate_server_service(msg);
+            if(msg.mtype == TERMINATE_QUEUE) terminate_queue_service(msg);
         }
     }
     remove_queue(server_queue);
@@ -72,7 +73,7 @@ void register_client(struct msg_b buf){
         return;
     }
     connected_clients++;
-    printf("Client with pid %d registered\n", buf.mtype);
+    printf("Client with pid %d registered\n", (int)buf.mtype);
 }
 
 int find_client(int pid){
@@ -84,6 +85,15 @@ int find_client(int pid){
         }
     }
     return queue_id;
+}
+
+void remove_client(int pid){
+  for(int i = 0; i < connected_clients; i++){
+      if(clients[i][0] == pid){
+          clients[i][0] = -1;
+          return;
+      }
+  }
 }
 
 void echo_service(struct msg_b buf){
@@ -98,7 +108,7 @@ void echo_service(struct msg_b buf){
         printf("Couldn't send_msg echo\n");
         return;
     }
-    printf("Server service echo - pid: %d\n", buf.mtype);
+    printf("Server service echo - pid: %d\n", (int)buf.mtype);
 }
 
 char* get_time(){
@@ -123,7 +133,7 @@ void get_server_time_service(struct msg_b buf){
         printf("Couldn't send_msg echo");
         return;
     }
-    printf("Server service time - pid: %d\n", buf.mtype);
+    printf("Server service time - pid: %d\n", (int)buf.mtype);
 }
 
 void to_upper(char* string){
@@ -147,10 +157,38 @@ void to_upper_case_service(struct msg_b buf){
         printf("Couldn't send_msg echo");
         return;
     }
-    printf("Server service to upper - pid: %d\n", buf.mtype);
+    printf("Server service to upper - pid: %d\n", (int)buf.mtype);
 }
 
-void terminate_server_service(){
+void terminate_server_service(struct msg_b buf){
     terminate_client = 1;
+    for(int i = 0; i < connected_clients; i++){
+        if(clients[i][0] > 0){
+          buf.mtype = TERMINATE_QUEUE;
+          buf.pid = getpid();
+          if(msgsnd(clients[i][1], &buf, MSGBUF_SIZE, 0) == -1){
+              printf("Couldn't termiante_queue\n");
+              return;
+          }
+          printf("Server terminated queue - pid: %d\n", (int)clients[i][0]);
+        }
+    }
     printf("Server service terminate\n");
+}
+
+void terminate_queue_service(struct msg_b buf){
+  int queue_id = find_client(buf.pid);
+  remove_client(buf.pid);
+  if(queue_id == -1){
+      printf("Client's queue not found\n");
+      return;
+  }
+  buf.mtype = TERMINATE_QUEUE;
+  int pid = buf.pid;
+  buf.pid = getpid();
+  if(msgsnd(queue_id, &buf, MSGBUF_SIZE, 0) == -1){
+      printf("Couldn't termiante_queue\n");
+      return;
+  }
+  printf("Server terminated queue - pid: %d\n", pid);
 }

@@ -31,11 +31,9 @@ int main(){
 
     send_handshake(server_queue, key_client);
     receive_handshake(client_queue);
-    fflush(stdout);
-    struct msg_b msg;
+
     char c;
     listener_pid = fork();
-    atexit(clean);
     if(listener_pid == 0) listen(client_queue, client_pid);
     char* buf = (char*)calloc(MSGBUF_SIZE, sizeof(char));
     size_t size = MSGBUF_SIZE;
@@ -50,14 +48,18 @@ int main(){
         if(c == '2') send_msg(server_queue, TO_UPPER_CASE, buf);
         if(c == '3') send_msg(server_queue, GET_SERVER_TIME, buf);
         if(c == '4') send_msg(server_queue, TERMINATE_SERVER, buf);
+        if(c == 'q') send_msg(server_queue, TERMINATE_QUEUE, buf);
     }while(c != '4' && c != 'q');
-
     free(buf);
+    while(1){};
 }
 
 void clean(){
-    kill(listener_pid, SIGKILL);
-    remove_queue(client_queue);
+    kill(getppid(), SIGKILL);
+    if(msgctl(client_queue, IPC_RMID, NULL) !=0){
+        printf("msgctl - error\n");
+        exit(-1);
+    }
     exit(0);
 }
 void send_msg(int queue_server, int mtype, char *mtext){
@@ -90,13 +92,6 @@ void receive_handshake(int queue_server){
     }
 }
 
-void remove_queue(key_t key){
-    if(msgctl(key, IPC_RMID, NULL) !=0){
-        printf("msgctl - error\n");
-        exit(-1);
-    }
-}
-
 void listen(int client_queue, pid_t msg_id){
     struct msg_b msg;
     while(1){
@@ -104,6 +99,7 @@ void listen(int client_queue, pid_t msg_id){
         int res = msgrcv(client_queue, &msg, MSGBUF_SIZE, 0, IPC_NOWAIT);
         if(res >= 0){
             if(msg.mtype == msg_id) printf("Client: %s\n", msg.mtext);
+            else clean();
         }
     }
 }

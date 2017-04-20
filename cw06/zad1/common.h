@@ -22,6 +22,7 @@
 #define TO_UPPER_CASE 2
 #define GET_SERVER_TIME 3
 #define TERMINATE_SERVER 4
+#define TERMINATE_QUEUE 6
 
 struct msg_b {
     long mtype;       /* message type, must be > 0 */
