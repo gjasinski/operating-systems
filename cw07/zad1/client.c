@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <time.h>
 #include <stdio.h>
@@ -158,4 +159,3 @@ void go_to_barber() {
     //release_semaphore(semaphore_set, SEM_BARBER_WALKING);
     sit_in_waiting_room();
 }
-

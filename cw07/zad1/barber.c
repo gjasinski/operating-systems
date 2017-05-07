@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <time.h>
 #include <stdio.h>
@@ -69,7 +70,7 @@ void clean_and_exit(int i){
 }
 
 int set_up_semaphores(){
-    int set_id = semget(get_key(SEMAPHORES), 2, IPC_CREAT | S_IRUSR | S_IWUSR | S_IWGRP);
+    int set_id = semget(get_key(SEMAPHORES), 3, IPC_CREAT | S_IRUSR | S_IWUSR | S_IWGRP);
     printf("%d %s\n", set_id, strerror(errno));
     if (semctl(set_id, SEM_FIFO, SETVAL, 1) != 0) printf("%s\n", strerror(errno));
     if (semctl(set_id, SEM_BARBER, SETVAL, 0) != 0) printf("%s\n", strerror(errno));
