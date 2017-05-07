@@ -51,9 +51,8 @@ key_t get_key(int key){
 int get_queue(){
     struct msg_b buf;
     int queue = msgget(get_key(BARBER), 0);
-    if(msgsnd(queue, &buf, MSGBUF_SIZE, 0) == -1){
-        printf("Couldn't get queue\n");
-        exit(-1);
+    if(queue <= 0){
+        printf("get_queue - err");
     }
     return queue;
 }
@@ -61,8 +60,8 @@ int get_queue(){
 void get_barber_pid(){
     struct msg_b msg;
     get_semaphore(semaphore_set, SEM_FIFO, 0);
-    msgrcv(queue_key, &msg, MSGBUF_SIZE, 0, IPC_NOWAIT);
-    msgsnd(queue_key, &msg, MSGBUF_SIZE, 0);
+    if(msgrcv(queue_key, &msg, MSGBUF_SIZE, 0, IPC_NOWAIT) < 0) printf("get_barber_pid msgrcv err");
+    if (msgsnd(queue_key, &msg, MSGBUF_SIZE, 0) < 0) printf("get_barber_pid msgrcv err");
     release_semaphore(semaphore_set, SEM_FIFO);
     barber_pid = msg.barber_pid;
 }
@@ -116,20 +115,21 @@ void release_semaphore(int semaphore_set, int semaphore_no){
 
 int add_client_to_fifo(){
     struct msg_b msg;
-    msgrcv(queue_key, &msg, MSGBUF_SIZE, 0, IPC_NOWAIT);
+    if(msgrcv(queue_key, &msg, MSGBUF_SIZE, 0, IPC_NOWAIT) < 0) printf("add_client_to_fifo msgrcv err");
     if(msg.queue_end < msg.chairs){
         msg.queue[msg.queue_end] = getpid();
         msg.queue_end++;
-        msgsnd(queue_key, &msg, MSGBUF_SIZE, 0);
+        if(msgsnd(queue_key, &msg, MSGBUF_SIZE, 0)) printf("add_client_to_fifo - msgsnd err");
         return 0;
     }
     else{
-        msgsnd(queue_key, &msg, MSGBUF_SIZE, 0);
+        if(msgsnd(queue_key, &msg, MSGBUF_SIZE, 0) < 0) printf("add_client_to_fifo - msgsnd err");
         return -1;
     }
 }
 
 void wake_up_barber(){
+    print_info("is waking up barber", getpid());
     kill(barber_pid, SIGUSR1);
 //    release_semaphore(semaphore_set, SEM_BARBER_SLEEPING);
     while(1){}
@@ -142,6 +142,7 @@ void sit_in_waiting_room(){
         print_info("left barber - no seat in waiting room ", getpid());
         go_to_barber();
     }
+    print_info("take a seat in waiting room", getpid());
     while(1){};
 }
 

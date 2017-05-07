@@ -48,6 +48,7 @@ key_t get_key(int key){
 int set_up_queue(){
     queue_key = msgget(get_key(BARBER), IPC_CREAT | S_IRUSR | S_IWUSR | S_IWGRP);
     struct msg_b buf;
+    buf.mtype = 1;
     buf.chairs = chairs;
     buf.queue_end = 0;
     buf.barber_pid = getpid();
@@ -61,7 +62,7 @@ int set_up_queue(){
 
 void clean_and_exit(int i){
     if(msgctl(queue_key, IPC_RMID, NULL) !=0){
-        printf("msgctl - error");
+        printf("clean_and_exit - msgctl - error");
         exit(EXIT_FAILURE);
     }
     exit(EXIT_SUCCESS);
@@ -83,6 +84,7 @@ int set_up_receiving_signals(){
     struct sigaction act;
     act.sa_sigaction = &hair_is_being_cut;
     act.sa_flags = SA_SIGINFO;
+    sigemptyset(&act.sa_mask);
     sigaction(SIGUSR1, &act, NULL);
 }
 
@@ -120,7 +122,9 @@ void release_semaphore(int semaphore_set, int semaphore_no){
 
 int get_next_client_from_fifo(int queue_key){
     struct msg_b msg;
-    msgrcv(queue_key, &msg, MSGBUF_SIZE, 0, IPC_NOWAIT);
+    if(msgrcv(queue_key, &msg, MSGBUF_SIZE, 0, IPC_NOWAIT) < 0){
+        printf("get_next_client_from_fifo - MSGRCV ERR");
+    }
     int res;
     if(msg.queue_end > 0){
         res = msg.queue[0];
@@ -132,7 +136,9 @@ int get_next_client_from_fifo(int queue_key){
     else{
         res = -1;
     }
-    msgsnd(queue_key, &msg, MSGBUF_SIZE, 0);
+    if(msgsnd(queue_key, &msg, MSGBUF_SIZE, 0) < 0){
+        printf("get_next_client_from_fifo - MSGSND ERRR");
+    }
     return res;
 }
 
@@ -140,6 +146,11 @@ int get_next_client_from_fifo(int queue_key){
 void barber_cut_client(int client_pid){
     print_info("start cutting client with pid: ", client_pid);
     print_info("finish cutting client with pid: ", client_pid);
+    union sigval val;
+    val.sival_int = SIGRTMIN;
+    if(sigqueue(client_pid, SIGRTMIN, val) == -1){
+        printf("barber_cut_client sigqueue - err");
+    }
     kill(client_pid, SIGRTMIN);
     barber_checks_waiting_room();
 }
