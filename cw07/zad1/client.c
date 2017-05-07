@@ -14,7 +14,7 @@
 int MSGBUF_SIZE = sizeof(struct msg_b) - sizeof(long);
 int cuts;
 int queue_key;
-int semaphore_set;
+int set_id_1, set_id_2;
 pid_t barber_pid;
 
 int get_queue();
@@ -41,7 +41,8 @@ int main(int argc, char* argv[]) {
     cuts = atol(argv[1]);
     queue_key = get_queue();
     set_up_receiving_signals();
-    semaphore_set = semget(get_key(SEMAPHORES), 0, 0);
+    set_id_1 = semget(get_key(SEMAPHORES_1), 0, 0);
+    set_id_2 = semget(get_key(SEMAPHORES_2), 0, 0);
     get_barber_pid();
     go_to_barber();
 }
@@ -62,10 +63,10 @@ int get_queue(){
 
 void get_barber_pid(){
     struct msg_b msg;
-    get_semaphore(semaphore_set, SEM_FIFO, 0);
+    get_semaphore(set_id_1, SEM_FIFO, 0);
     if(msgrcv(queue_key, &msg, MSGBUF_SIZE, 0, IPC_NOWAIT) < 0) printf("get_barber_pid msgrcv err");
     if (msgsnd(queue_key, &msg, MSGBUF_SIZE, 0) < 0) printf("get_barber_pid msgrcv err");
-    release_semaphore(semaphore_set, SEM_FIFO);
+    release_semaphore(set_id_1, SEM_FIFO);
     barber_pid = msg.barber_pid;
 }
 
@@ -73,14 +74,19 @@ void hair_is_being_cut(int sig, siginfo_t *siginfo, void *context){
     print_info("left barber after cutting", getpid());
     cuts--;
     if(cuts == 0) exit(EXIT_SUCCESS);
+    set_up_receiving_signals();
     go_to_barber();
 }
 
 int set_up_receiving_signals(){
+    sigset_t s;
+    sigemptyset(&s);
+    sigaddset(&s, SIGRTMIN);
     struct sigaction act;
     act.sa_sigaction = &hair_is_being_cut;
     act.sa_flags = SA_SIGINFO;
     sigaction(SIGRTMIN, &act, NULL);
+    sigprocmask(SIG_UNBLOCK, &s, NULL);
 }
 
 char* get_time(){
@@ -88,7 +94,7 @@ char* get_time(){
     if(clock_gettime(CLOCK_MONOTONIC, &tp) == -1) printf("error");
     struct tm* time = localtime(&tp.tv_sec);
     char* result = (char*)calloc(20, sizeof(char));
-    sprintf(result, "%d:%d:%d:%ld", time->tm_hour, time->tm_min, time->tm_sec, tp.tv_nsec);
+    sprintf(result, "%d:%d:%d:%ld", time->tm_hour, time->tm_min, time->tm_sec, tp.tv_nsec/1000);
     return result;
 }
 
@@ -104,7 +110,9 @@ int get_semaphore(int semaphore_set, int semaphore_no, short flag){
     sops.sem_num = semaphore_no;
     sops.sem_flg = flag;
     sops.sem_op = -1;
-    return semop(semaphore_set, &sops, 1);
+    int ret = semop(semaphore_set, &sops, 1);
+    //if (ret == -1) printf("get_semaphore %s\n", strerror(errno));
+    return ret;
 }
 
 void release_semaphore(int semaphore_set, int semaphore_no){
@@ -112,7 +120,7 @@ void release_semaphore(int semaphore_set, int semaphore_no){
     sops.sem_num = semaphore_no;
     sops.sem_flg = 0;
     sops.sem_op = 1;
-    semop(semaphore_set, &sops, 1);
+    if (semop(semaphore_set, &sops, 1) == -1) printf("release_semaphore %s", strerror(errno));
 }
 
 
@@ -134,13 +142,13 @@ int add_client_to_fifo(){
 void wake_up_barber(){
     print_info("is waking up barber", getpid());
     kill(barber_pid, SIGUSR1);
-//    release_semaphore(semaphore_set, SEM_BARBER_SLEEPING);
     while(1){}
 }
 
 void sit_in_waiting_room(){
     int res = add_client_to_fifo();
-    release_semaphore(semaphore_set, SEM_FIFO);
+    release_semaphore(set_id_1, SEM_FIFO);
+    release_semaphore(set_id_2, SEM_BARBER_WALKING);
     if (res == -1) {
         print_info("left barber - no seat in waiting room ", getpid());
         go_to_barber();
@@ -150,12 +158,12 @@ void sit_in_waiting_room(){
 }
 
 void go_to_barber() {
-    if(get_semaphore(semaphore_set, SEM_BARBER_WALKING, 0)!=0)printf("go_to_barber %s", strerror(errno));
-    if(get_semaphore(semaphore_set, SEM_BARBER, IPC_NOWAIT) == 0){
-        //release_semaphore(semaphore_set, SEM_BARBER_WALKING);
+    get_semaphore(set_id_2, SEM_BARBER_WALKING, 0);
+    if(get_semaphore(set_id_1, SEM_BARBER, IPC_NOWAIT) == 0){
+        release_semaphore(set_id_2, SEM_BARBER_WALKING);
         wake_up_barber();
     }
-    get_semaphore(semaphore_set, SEM_FIFO, 0);
-    //release_semaphore(semaphore_set, SEM_BARBER_WALKING);
+    printf("BB");
+    get_semaphore(set_id_1, SEM_FIFO, 0);
     sit_in_waiting_room();
 }

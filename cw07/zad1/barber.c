@@ -16,15 +16,14 @@
 int MSGBUF_SIZE = sizeof(struct msg_b) - sizeof(long);
 int chairs;
 int queue_key;
-int semaphore_set;
-
+int set_id_1, set_id_2;
 int set_up_queue();
 
 void clean_and_exit(int i);
 
 void barber_checks_waiting_room();
 
-int set_up_semaphores();
+void set_up_semaphores();
 
 void barber_cut_client(int client_pid);
 
@@ -38,7 +37,7 @@ int main(int argc, char* argv[]) {
     chairs = atol(argv[1]);
     set_up_queue();
     set_up_receiving_signals();
-    semaphore_set = set_up_semaphores();
+    set_up_semaphores();
     barber_checks_waiting_room();
     while(1){}
 }
@@ -69,13 +68,12 @@ void clean_and_exit(int i){
     exit(EXIT_SUCCESS);
 }
 
-int set_up_semaphores(){
-    int set_id = semget(get_key(SEMAPHORES), 3, IPC_CREAT | S_IRUSR | S_IWUSR | S_IWGRP);
-    printf("%d %s\n", set_id, strerror(errno));
-    if (semctl(set_id, SEM_FIFO, SETVAL, 1) != 0) printf("%s\n", strerror(errno));
-    if (semctl(set_id, SEM_BARBER, SETVAL, 0) != 0) printf("%s\n", strerror(errno));
-    if (semctl(set_id, SEM_BARBER_WALKING, SETVAL, 1) != 0) printf("%s\n", strerror(errno));
-    return set_id;
+void set_up_semaphores(){
+    set_id_1 = semget(get_key(SEMAPHORES_1), 2, IPC_CREAT | S_IRUSR | S_IWUSR | S_IWGRP);
+    set_id_2 = semget(get_key(SEMAPHORES_2), 1, IPC_CREAT | S_IRUSR | S_IWUSR | S_IWGRP);
+    if (semctl(set_id_1, SEM_FIFO, SETVAL, 1) != 0) printf("1%s\n", strerror(errno));
+    if (semctl(set_id_1, SEM_BARBER, SETVAL, 0) != 0) printf("2%s\n", strerror(errno));
+    if (semctl(set_id_2, SEM_BARBER_WALKING, SETVAL, 0) != 0) printf("3%s\n", strerror(errno));
 }
 
 void hair_is_being_cut(int sig, siginfo_t *siginfo, void *context){
@@ -96,7 +94,7 @@ char* get_time(){
     if(clock_gettime(CLOCK_MONOTONIC, &tp) == -1) printf("error");
     struct tm* time = localtime(&tp.tv_sec);
     char* result = (char*)calloc(20, sizeof(char));
-    sprintf(result, "%d:%d:%d:%ld", time->tm_hour, time->tm_min, time->tm_sec, tp.tv_nsec);
+    sprintf(result, "%d:%d:%d:%ld", time->tm_hour, time->tm_min, time->tm_sec, tp.tv_nsec/1000);
     return result;
 }
 
@@ -154,23 +152,24 @@ void barber_cut_client(int client_pid){
     if(sigqueue(client_pid, SIGRTMIN, val) == -1){
         printf("barber_cut_client sigqueue - err");
     }
-    kill(client_pid, SIGRTMIN);
-    if(get_semaphore(semaphore_set, SEM_BARBER_WALKING, 0) != 0) printf("get sem sem barber walk");
+    printf("%s\n", strerror(errno));
+    //kill(client_pid, SIGRTMIN);
+    get_semaphore(set_id_2, SEM_BARBER_WALKING, 0);
     barber_checks_waiting_room();
 }
 
 void barber_checks_waiting_room(){
-    get_semaphore(semaphore_set, SEM_FIFO, 0);
+    get_semaphore(set_id_1, SEM_FIFO, 0);
     int next_client = get_next_client_from_fifo(queue_key);
     if(next_client == -1){
-        release_semaphore(semaphore_set, SEM_FIFO);
-        release_semaphore(semaphore_set, SEM_BARBER);
-        release_semaphore(semaphore_set, SEM_BARBER_WALKING);
         print_info("asleep", 0);
+        release_semaphore(set_id_1, SEM_FIFO);
+        release_semaphore(set_id_1, SEM_BARBER);
+        release_semaphore(set_id_2, SEM_BARBER_WALKING);
     }
     else{
-        release_semaphore(semaphore_set, SEM_FIFO);
-        release_semaphore(semaphore_set, SEM_BARBER_WALKING);
+        release_semaphore(set_id_1, SEM_FIFO);
+        release_semaphore(set_id_2, SEM_BARBER_WALKING);
         barber_cut_client(next_client);
     }
 }

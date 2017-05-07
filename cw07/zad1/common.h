@@ -7,10 +7,11 @@
 
 #define QUEUE_SIZE 128
 #define BARBER 1
-#define SEMAPHORES 2
+#define SEMAPHORES_1 2
+#define SEMAPHORES_2 3
 #define SEM_BARBER 0
 #define SEM_FIFO 1
-#define SEM_BARBER_WALKING 2
+#define SEM_BARBER_WALKING 0
 struct msg_b {
     long mtype;       /* message type, must be > 0 */;
     pid_t barber_pid;

@@ -28,5 +28,6 @@ int main(int argc, char* argv[]) {
     int return_value;
     for(int i = 0; i < clients; i++){
         waitpid(clients_pid[i], &return_value, 0);
+        printf("%d\n\n", i);
     }
 }
