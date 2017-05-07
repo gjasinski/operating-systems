@@ -6,6 +6,8 @@
 #include <sys/sem.h>
 #include <signal.h>
 #include <unistd.h>
+#include <memory.h>
+#include <errno.h>
 #include "common.h"
 
 int MSGBUF_SIZE = sizeof(struct msg_b) - sizeof(long);
@@ -147,10 +149,13 @@ void sit_in_waiting_room(){
 }
 
 void go_to_barber() {
+    if(get_semaphore(semaphore_set, SEM_BARBER_WALKING, 0)!=0)printf("go_to_barber %s", strerror(errno));
     if(get_semaphore(semaphore_set, SEM_BARBER, IPC_NOWAIT) == 0){
+        //release_semaphore(semaphore_set, SEM_BARBER_WALKING);
         wake_up_barber();
     }
     get_semaphore(semaphore_set, SEM_FIFO, 0);
+    //release_semaphore(semaphore_set, SEM_BARBER_WALKING);
     sit_in_waiting_room();
 }
 

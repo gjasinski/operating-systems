@@ -8,6 +8,8 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <unistd.h>
+#include <memory.h>
+#include <errno.h>
 #include "common.h"
 
 int MSGBUF_SIZE = sizeof(struct msg_b) - sizeof(long);
@@ -52,8 +54,6 @@ int set_up_queue(){
     buf.chairs = chairs;
     buf.queue_end = 0;
     buf.barber_pid = getpid();
-    printf("%d", getpid());
-    printf("%d\n", buf.barber_pid);
     if(msgsnd(queue_key, &buf, MSGBUF_SIZE, 0) == -1){
         printf("Couldn't setup queue\n");
         exit(-1);
@@ -70,8 +70,10 @@ void clean_and_exit(int i){
 
 int set_up_semaphores(){
     int set_id = semget(get_key(SEMAPHORES), 2, IPC_CREAT | S_IRUSR | S_IWUSR | S_IWGRP);
-    semctl(set_id, SEM_FIFO, SETVAL, 1);
-    semctl(set_id, SEM_BARBER, SETVAL, 0);
+    printf("%d %s\n", set_id, strerror(errno));
+    if (semctl(set_id, SEM_FIFO, SETVAL, 1) != 0) printf("%s\n", strerror(errno));
+    if (semctl(set_id, SEM_BARBER, SETVAL, 0) != 0) printf("%s\n", strerror(errno));
+    if (semctl(set_id, SEM_BARBER_WALKING, SETVAL, 1) != 0) printf("%s\n", strerror(errno));
     return set_id;
 }
 
@@ -104,12 +106,12 @@ void print_info(char* info, int pid){
     fflush(stdout);
 }
 
-void get_semaphore(int semaphore_set, int semaphore_no, short flag){
+int get_semaphore(int semaphore_set, int semaphore_no, short flag){
     struct sembuf sops;
     sops.sem_num = semaphore_no;
     sops.sem_flg = flag;
     sops.sem_op = -1;
-    semop(semaphore_set, &sops, 1);
+    return semop(semaphore_set, &sops, 1);
 }
 
 void release_semaphore(int semaphore_set, int semaphore_no){
@@ -152,6 +154,7 @@ void barber_cut_client(int client_pid){
         printf("barber_cut_client sigqueue - err");
     }
     kill(client_pid, SIGRTMIN);
+    if(get_semaphore(semaphore_set, SEM_BARBER_WALKING, 0) != 0) printf("get sem sem barber walk");
     barber_checks_waiting_room();
 }
 
@@ -161,10 +164,12 @@ void barber_checks_waiting_room(){
     if(next_client == -1){
         release_semaphore(semaphore_set, SEM_FIFO);
         release_semaphore(semaphore_set, SEM_BARBER);
+        release_semaphore(semaphore_set, SEM_BARBER_WALKING);
         print_info("asleep", 0);
     }
     else{
         release_semaphore(semaphore_set, SEM_FIFO);
+        release_semaphore(semaphore_set, SEM_BARBER_WALKING);
         barber_cut_client(next_client);
     }
 }
