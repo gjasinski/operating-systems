@@ -7,6 +7,7 @@
 #include <sys/sem.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <unistd.h>
 #include "common.h"
 
 int MSGBUF_SIZE = sizeof(struct msg_b) - sizeof(long);
@@ -32,7 +33,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     chairs = atol(argv[1]);
-    queue_key = set_up_queue();
+    set_up_queue();
     set_up_receiving_signals();
     semaphore_set = set_up_semaphores();
     barber_checks_waiting_room();
@@ -45,15 +46,17 @@ key_t get_key(int key){
 }
 
 int set_up_queue(){
-    int queue = msgget(get_key(BARBER), IPC_CREAT | S_IRUSR | S_IWUSR | S_IWGRP);
+    queue_key = msgget(get_key(BARBER), IPC_CREAT | S_IRUSR | S_IWUSR | S_IWGRP);
     struct msg_b buf;
     buf.chairs = chairs;
     buf.queue_end = 0;
-    if(msgsnd(queue, &buf, MSGBUF_SIZE, 0) == -1){
+    buf.barber_pid = getpid();
+    printf("%d", getpid());
+    printf("%d\n", buf.barber_pid);
+    if(msgsnd(queue_key, &buf, MSGBUF_SIZE, 0) == -1){
         printf("Couldn't setup queue\n");
         exit(-1);
     }
-    return queue;
 }
 
 void clean_and_exit(int i){
@@ -94,8 +97,9 @@ char* get_time(){
 
 void print_info(char* info, int pid){
     char* time = get_time();
-    printf("Barber - %s %d- %s", info, pid, time);
+    printf("Barber - %s %d- %s\n", info, pid, time);
     free(time);
+    fflush(stdout);
 }
 
 void get_semaphore(int semaphore_set, int semaphore_no, short flag){
@@ -132,14 +136,11 @@ int get_next_client_from_fifo(int queue_key){
     return res;
 }
 
-void inform_client_about_cutting(int client_pid){
-    kill(client_pid, SIGUSR1);
-}
 
 void barber_cut_client(int client_pid){
     print_info("start cutting client with pid: ", client_pid);
     print_info("finish cutting client with pid: ", client_pid);
-    inform_client_about_cutting(client_pid);
+    kill(client_pid, SIGRTMIN);
     barber_checks_waiting_room();
 }
 

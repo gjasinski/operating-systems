@@ -10,8 +10,10 @@
 #define SEMAPHORES 2
 #define SEM_BARBER 0
 #define SEM_FIFO 1
+#define SEM_BARBER_SLEEPING 2
 struct msg_b {
     long mtype;       /* message type, must be > 0 */;
+    pid_t barber_pid;
     int chairs;
     int queue_end;
     int queue[QUEUE_SIZE];
