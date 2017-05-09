@@ -3,7 +3,7 @@ project(Zad2)
 
 set(CMAKE_C_STANDARD 99)
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror -std=c99")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -lrt -pthread")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -pthread -lrt")
 
 add_executable(barber barber.c)
 add_executable(client_creator client_creator.c)
