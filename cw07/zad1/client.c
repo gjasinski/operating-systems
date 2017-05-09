@@ -63,10 +63,8 @@ int get_queue(){
 
 void get_barber_pid(){
     struct msg_b msg;
-    get_semaphore(set_id_1, SEM_FIFO, 0);
     if(msgrcv(queue_key, &msg, MSGBUF_SIZE, 0, IPC_NOWAIT) < 0) printf("get_barber_pid msgrcv err");
     if (msgsnd(queue_key, &msg, MSGBUF_SIZE, 0) < 0) printf("get_barber_pid msgrcv err");
-    release_semaphore(set_id_1, SEM_FIFO);
     barber_pid = msg.barber_pid;
 }
 
@@ -147,7 +145,6 @@ void wake_up_barber(){
 
 void sit_in_waiting_room(){
     int res = add_client_to_fifo();
-    release_semaphore(set_id_1, SEM_FIFO);
     release_semaphore(set_id_2, SEM_BARBER_WALKING);
     if (res == -1) {
         print_info("left barber - no seat in waiting room ", getpid());
@@ -163,7 +160,5 @@ void go_to_barber() {
         release_semaphore(set_id_2, SEM_BARBER_WALKING);
         wake_up_barber();
     }
-    printf("BB");
-    get_semaphore(set_id_1, SEM_FIFO, 0);
     sit_in_waiting_room();
 }
