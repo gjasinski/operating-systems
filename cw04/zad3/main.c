@@ -1,4 +1,4 @@
-#define _BSD_SOURCE || _XOPEN_SOURCE >= 500
+//#define _BSD_SOURCE || _XOPEN_SOURCE >= 500
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
