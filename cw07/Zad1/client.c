@@ -43,7 +43,9 @@ int main(int argc, char* argv[]) {
     set_up_receiving_signals();
     set_id_1 = semget(get_key(SEMAPHORES_1), 0, 0);
     set_id_2 = semget(get_key(SEMAPHORES_2), 0, 0);
+    get_semaphore(set_id_2, SEM_BARBER_WALKING, 0);
     get_barber_pid();
+    release_semaphore(set_id_2, SEM_BARBER_WALKING);
     go_to_barber();
 }
 

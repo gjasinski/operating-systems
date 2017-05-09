@@ -152,7 +152,7 @@ void barber_cut_client(int client_pid){
     if(sigqueue(client_pid, SIGRTMIN, val) == -1){
         printf("barber_cut_client sigqueue - err");
     }
-    printf("%s\n", strerror(errno));
+    //printf("%s\n", strerror(errno));
     //kill(client_pid, SIGRTMIN);
     get_semaphore(set_id_2, SEM_BARBER_WALKING, 0);
     barber_checks_waiting_room();
