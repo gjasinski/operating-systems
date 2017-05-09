@@ -76,33 +76,33 @@ void print_info(char* info, int pid){
     fflush(stdout);
 }
 
+/*
+ * In debugging purpose
 void print_sem_value(sem_t* sem, char* sinfo){
     int info;
     sem_getvalue(sem, &info);
     printf("%s sem val %i\n", sinfo, info);
 }
+*/
+
 int get_semaphore(sem_t* sem, int block){
-    //print_sem_value(sem, "before get sem");
+
     if (block == 1){
         if (sem_wait(sem) == -1) {
             return -1;
         }
         else{
-            //print_sem_value(sem, "after get sem");
             return 0;
         }
     }
     else{
         int tmp = sem_trywait(sem);
-        //print_sem_value(sem, "after get sem");
         return tmp;
     }
 }
 
 void release_semaphore(sem_t* sem){
-    //print_sem_value(sem, "before relese sem");
     if (sem_post(sem) == -1) printf("release_semaphore %s", strerror(errno));
-    //print_sem_value(sem, "after release sem");
 }
 
 

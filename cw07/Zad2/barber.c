@@ -33,12 +33,15 @@ int main(int argc, char* argv[]) {
     while(1){}
 }
 
+/*
+ * In debugging purpose
 void print_sem_value(sem_t* sem){
     int info;
     sem_getvalue(sem, &info);
     printf("%s\n", strerror(errno));
     printf("semafor value: %i\n", info);
 }
+*/
 
 void set_up_common_memory(int chairs){
     shm_desc = shm_open(SHM_NAME, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IWGRP);
