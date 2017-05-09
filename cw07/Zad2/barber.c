@@ -1,8 +1,6 @@
 #include "common.h"
 
-int MSGBUF_SIZE = sizeof(struct msg_b) - sizeof(long);
 int chairs;
-int set_id_1, set_id_2;
 int shm_desc;
 int *shm_memory;
 sem_t* sem_barber;
@@ -61,20 +59,15 @@ void clean_and_exit(int i){
     if (munmap(shm_memory, SHM_SIZE) == -1) printf("clean_and_exit %s\n", strerror(errno));
     if (shm_unlink(SHM_NAME)== -1) printf("clean_and_exit %s\n", strerror(errno));
     if (sem_close(sem_barber) == -1 || sem_close(sem_barber_walking)) printf("clean_and_exit %s\n", strerror(errno));
-    printf("AAA");
     exit(EXIT_SUCCESS);
 }
 
 void set_up_semaphores(){
     sem_barber = sem_open(SEM_BARBER, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IWGRP, 0);
     sem_barber_walking = sem_open(SEM_BARBER_WALKING, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IWGRP, 0);
-    print_sem_value(sem_barber);
-    print_sem_value(sem_barber_walking);
     if(sem_barber == SEM_FAILED || sem_barber_walking == SEM_FAILED) printf("set_up_semaphores %s\n", strerror(errno));
-    while(get_semaphore(sem_barber, SEM_NOWAIT) != -1)
-    while(get_semaphore(sem_barber_walking, SEM_NOWAIT) != -1)
-    print_sem_value(sem_barber);
-    print_sem_value(sem_barber_walking);
+    while(get_semaphore(sem_barber, SEM_NOWAIT) != -1);
+    while(get_semaphore(sem_barber_walking, SEM_NOWAIT) != -1);
 }
 
 void hair_is_being_cut(int sig, siginfo_t *siginfo, void *context){
@@ -113,18 +106,15 @@ int get_semaphore(sem_t* sem, int block){
             return -1;
         }
         else{
-            //printf("semaphore taken\n");
             return 0;
         }
     }
     else{
-        //printf("semaphore taken\n");
         return sem_trywait(sem);
     }
 }
 
 void release_semaphore(sem_t* sem){
-    //printf("semaphore released\n");
     if (sem_post(sem) == -1) printf("release_semaphore %s", strerror(errno));
 }
 
