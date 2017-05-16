@@ -1,0 +1,25 @@
+1. SIGUSR1, SIGTERM, SIGKILL: wszyskie watki zabite
+  SIGSTOP - watki wstrzymane
+  Przy uzyciu thread_kill zachowanie takie samo.
+
+2. Zachowanie jak w podpunkcie 2.
+
+3. Zachowanie SIGUSR1 i SIGTERM jest zgodne z definiowana funkcja oblugi.
+  SIGKILL I SIGSTOP nie sa przechywytywane. Zachowanie jest takie samo w
+  przypadku wysylania sygnalu do procesu i watku.
+
+4.
+  sigusr1 PID 9141 TID 139985405556480
+  Inconsistency detected by ld.so: dl-fini.c: 205: _dl_fini: Assertion `ns != 0 || i == nloaded' fai
+  sigterm PID 9159 TID 140693737527040
+  Inconsistency detected by ld.so: dl-fini.c: 205: _dl_fini: Assertion `ns != 0 || i == nloaded' failed
+  dla SIGTERM i SIGSTOP standardowe dzialanie
+
+5. Zadanie 3.
+
+
+1. Floating point exception (core dumped)
+
+Dell Vostro 15 3000 Series
+Intel Core i3-5005U CPU
+Linux ubuntu 3.19.0-28-generic
