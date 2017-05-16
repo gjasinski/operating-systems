@@ -55,7 +55,7 @@ int search_words(){
             char* searched_str = strstr(buffer + 4, searched_word);
             if(searched_str != NULL) {
                 end_of_reading = 1;
-                printf("Thread %d found \"%s\" at position %d\n", pthread_self(), searched_word, position + i);
+                printf("Thread %d found \"%s\" at position %d\n", (int)pthread_self(), searched_word, position + i);
                 for (int j = 0; j < thread_amount && option != 3; j++) {
                     pthread_t self = pthread_self();
                     if (!pthread_equal(self, threads[j])) {
@@ -68,6 +68,7 @@ int search_words(){
     return end_of_reading;
 }
 void* asynchronous_read(void* unused){
+  printf("AAAAAAAAAAAA\n");
     buffer = (char*)calloc(record_number * (RECORD_SIZE + 4), sizeof(char));
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
     pthread_setspecific(buffer_key, buffer);
@@ -125,6 +126,7 @@ void asynchronous_threads(){
     threads = (pthread_t*)calloc(thread_amount, sizeof(pthread_t));
     pthread_key_create(&buffer_key, free_buffer);
     pthread_mutex_lock(&mutex_init);
+
     for (int i = 0; i < thread_amount; i++){
         pthread_create(&threads[i], &attr, &asynchronous_read, NULL);
     }
