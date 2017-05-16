@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #define RECORD_SIZE 1024
 
@@ -60,15 +61,17 @@ int search_words(){
                     pthread_t self = pthread_self();
                     if (!pthread_equal(self, threads[j])) {
                         pthread_cancel(threads[j]);
+                        exit(0);
                     }
                 }
+                fflush(stdout);
+                return end_of_reading;
             }
         }
     }
     return end_of_reading;
 }
 void* asynchronous_read(void* unused){
-  printf("AAAAAAAAAAAA\n");
     buffer = (char*)calloc(record_number * (RECORD_SIZE + 4), sizeof(char));
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
     pthread_setspecific(buffer_key, buffer);
@@ -89,8 +92,12 @@ void* synchronous_read(void* unused){
     pthread_setspecific(buffer_key, buffer);
     pthread_mutex_lock(&mutex_init);
     pthread_mutex_unlock(&mutex_init);
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
     pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
+
     int end_of_reading = 0;
+
+    pthread_testcancel();
 
     while(end_of_reading == 0){
         pthread_testcancel();
@@ -99,7 +106,9 @@ void* synchronous_read(void* unused){
         pthread_mutex_unlock(&mutex);
         pthread_testcancel();
     }
-    return NULL;
+
+    fflush(stdout);
+    pthread_exit(0);
 }
 
 void* detached_read(void* unused){
@@ -128,7 +137,7 @@ void asynchronous_threads(){
     pthread_mutex_lock(&mutex_init);
 
     for (int i = 0; i < thread_amount; i++){
-        pthread_create(&threads[i], &attr, &asynchronous_read, NULL);
+        pthread_create(&threads[i], NULL, &asynchronous_read, NULL);
     }
     pthread_mutex_unlock(&mutex_init);
 
@@ -143,7 +152,7 @@ void synchronous_threads(){
     pthread_key_create(&buffer_key, free_buffer);
     pthread_mutex_lock(&mutex_init);
     for (int i = 0; i < thread_amount; i++){
-        pthread_create(&threads[i], &attr, &synchronous_read, NULL);
+        pthread_create(&threads[i], NULL, &synchronous_read, NULL);
     }
     pthread_mutex_unlock(&mutex_init);
 
@@ -168,4 +177,5 @@ void detached_threads(){
     for (int i = 0; i < thread_amount; i++){
         pthread_join(threads[i], NULL);
     }
+    sleep(2);
 };
