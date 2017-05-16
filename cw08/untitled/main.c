@@ -8,6 +8,7 @@
 #define RECORD_SIZE 1024
 
 int thread_amount;
+int option;
 char* file_name;
 int record_number;
 char* searched_word;
@@ -28,7 +29,7 @@ int main (int argc, char** argv)
         printf("./main option thread_amount file_name record_number searched_word\n");
         exit(-1);
     }
-    int option = atoi(argv[1]);
+    option = atoi(argv[1]);
     thread_amount = atoi(argv[2]);
     file_name = argv[3];
     record_number = atoi(argv[4]);
@@ -55,7 +56,7 @@ int search_words(){
             if(searched_str != NULL) {
                 end_of_reading = 1;
                 printf("Thread %d found \"%s\" at position %d\n", pthread_self(), searched_word, position + i);
-                for (int j = 0; j < thread_amount; j++) {
+                for (int j = 0; j < thread_amount && option != 3; j++) {
                     pthread_t self = pthread_self();
                     if (!pthread_equal(self, threads[j])) {
                         pthread_cancel(threads[j]);
@@ -89,7 +90,9 @@ void* synchronous_read(void* unused){
     pthread_mutex_unlock(&mutex_init);
     pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
     int end_of_reading = 0;
+
     while(end_of_reading == 0){
+        pthread_testcancel();
         pthread_mutex_lock(&mutex);
         end_of_reading = search_words();
         pthread_mutex_unlock(&mutex);
@@ -99,9 +102,8 @@ void* synchronous_read(void* unused){
 }
 
 void* detached_read(void* unused){
-    buffer = (char*)calloc(record_number * (RECORD_SIZE + 4), sizeof(char));
-    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
     pthread_setspecific(buffer_key, buffer);
+    buffer = (char*)calloc(record_number * (RECORD_SIZE + 4), sizeof(char));
     pthread_mutex_lock(&mutex_init);
     pthread_mutex_unlock(&mutex_init);
 
@@ -145,6 +147,8 @@ void synchronous_threads(){
 
     for (int i = 0; i < thread_amount; i++){
         pthread_join(threads[i], NULL);
+        printf("%d\n", i);
+        fflush(stdout);
     }
 };
 
@@ -154,7 +158,7 @@ void detached_threads(){
     pthread_key_create(&buffer_key, free_buffer);
     pthread_mutex_lock(&mutex_init);
     for (int i = 0; i < thread_amount; i++){
-        pthread_create(&threads[i], &attr, &detached_read, NULL);
+        pthread_create(&threads[i], NULL, &detached_read, NULL);
         pthread_detach(threads[i]);
     }
     pthread_mutex_unlock(&mutex_init);
