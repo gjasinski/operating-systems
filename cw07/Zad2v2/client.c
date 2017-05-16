@@ -1,10 +1,15 @@
 #include "common.h"
+#include "string.h"
 
 sem_t* sem_barber, * sem_barber_walking, * sem_barber_sleeping;
 int cuts;
 pid_t barber_pid;
 int shm_desc;
 int* shm_memory;
+sem_t** sem_waiting_room;
+sem_t* curr_sem;
+char* SEM_CUTTING  = "/sem_cutting";
+
 void get_shm();
 
 void set_up_receiving_signals();
@@ -24,7 +29,25 @@ int main(int argc, char* argv[]) {
     }
     cuts = atol(argv[1]);
     get_shm();
-    set_up_receiving_signals();
+    //set_up_receiving_signals();
+    char* tmp = (char*)calloc(3, sizeof(char));
+    sem_waiting_room = (sem_t**)calloc(shm_memory[SHM_CHAIRS], sizeof(sem_t));
+    for(int i = 0; i < shm_memory[SHM_CHAIRS]; i++){
+      char* tmp2 = (char*)calloc(50, sizeof(char));
+      sprintf(tmp, "%d", i);
+      memcpy(tmp2, SEM_CUTTING, sizeof(SEM_CUTTING));
+      strcat(tmp2, tmp);
+      printf("%s\n", tmp2);
+      sem_waiting_room[i] = sem_open(tmp2, 0);
+      if(sem_waiting_room[i] == SEM_FAILED){printf("ERROR sem_waiting_room %s\n", strerror(errno));}
+      while(get_semaphore(sem_waiting_room[i], SEM_NOWAIT) != -1){
+        printf("while\n");
+      }
+      free(tmp2);
+    }
+    free(tmp);
+
+
     sem_barber = sem_open(SEM_BARBER, 0);
     sem_barber_walking = sem_open(SEM_BARBER_WALKING, 0);
     sem_barber_sleeping = sem_open(SEM_BARBER_SLEEPING, 0);
@@ -46,7 +69,7 @@ void hair_is_being_cut(int sig, siginfo_t *siginfo, void *context){
     print_info("left barber after cutting", getpid());
     cuts--;
     if(cuts == 0) exit(EXIT_SUCCESS);
-    set_up_receiving_signals();
+  //  set_up_receiving_signals();
     go_to_barber();
 }
 
@@ -108,9 +131,9 @@ void release_semaphore(sem_t* sem){
 
 
 int add_client_to_shm(){
-    if(shm_memory[SHM_CHAIRS] + 2 > shm_memory[SHM_ARRAY_END]){
-        shm_memory[shm_memory[SHM_ARRAY_END]] = getpid();
-        shm_memory[SHM_ARRAY_END]++;
+    if(shm_memory[SHM_CHAIRS] + 2 > shm_memory[SHM_QUEUE_END]){
+        shm_memory[shm_memory[SHM_QUEUE_END]] = getpid();
+        shm_memory[SHM_QUEUE_END]++;
         return 0;
     }
     else{
@@ -123,18 +146,25 @@ void wake_up_barber(){
     print_info("is waking up barber", getpid());
     release_semaphore(sem_barber_sleeping);
     //kill(barber_pid, SIGUSR1);
-    while(1){}
+    get_time();
+    get_time();
+    print_info("left barber after cutting", getpid());
+    cuts--;
 }
 
 void sit_in_waiting_room(){
     int res = add_client_to_shm();
-    release_semaphore(sem_barber_walking);
     if (res == -1) {
         print_info("left barber - no seat in waiting room ", getpid());
         go_to_barber();
     }
+    sem_t* cutting_sem = sem_waiting_room[shm_memory[SHM_QUEUE_END - 1]];
+
+    release_semaphore(sem_barber_walking);
     print_info("take a seat in waiting room", getpid());
-    while(1){};
+    get_semaphore(cutting_sem, SEM_WAIT);
+    print_info("left barber after cutting", getpid());
+    release_semaphore(cutting_sem);
 }
 
 void go_to_barber() {
