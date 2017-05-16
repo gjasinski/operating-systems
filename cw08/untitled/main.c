@@ -55,8 +55,9 @@ int search_words(){
         for(int i = 0; i < record_number && end_of_reading == 0; i++){
             char* searched_str = strstr(buffer + 4, searched_word);
             if(searched_str != NULL) {
+                int tmp = (int)(searched_str - buffer);
                 end_of_reading = 1;
-                printf("Thread %d found \"%s\" at position %d\n", (int)pthread_self(), searched_word, position + i);
+                printf("Thread %ld found \"%s\" at position %d\n", (long int)pthread_self(), searched_word, position + tmp/1028);
                 for (int j = 0; j < thread_amount && option != 3; j++) {
                     pthread_t self = pthread_self();
                     if (!pthread_equal(self, threads[j])) {
