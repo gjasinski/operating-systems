@@ -10,6 +10,13 @@ sem_t* sem_barber_sleeping;
 sem_t* sem_baber_cutting;
 sem_t** sem_waiting_room;
 
+/*
+ * sprawdzic funkcje ktora jest wywolywana podczas konczenia pracy
+ *
+ *
+ *
+ *
+ */
 char* SEM_CUTTING  = "/sem_cutting";
 
 void release_semaphore(sem_t* sem);
@@ -38,6 +45,7 @@ int main(int argc, char* argv[]) {
     //set_up_receiving_signals();
     set_up_semaphores();
     barber_checks_waiting_room();
+    //go_sleep();
     while(1){}
 }
 
@@ -57,10 +65,10 @@ void set_up_common_memory(int chairs){
     if (ftruncate(shm_desc, SHM_SIZE) !=0) printf("set_up_common_memory %s\n", strerror(errno));
     shm_memory =(int*) mmap(NULL, SHM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm_desc, 0);
     if (shm_memory == MAP_FAILED) printf("set_up_common_memory %s\n", strerror(errno));
-    shm_memory[0] = getpid();
-    shm_memory[1] = chairs;
-    shm_memory[2] = -1;
-    shm_memory[3] = 3;
+    shm_memory[0] = getpid();   //SHM_BARBER_PID
+    shm_memory[1] = chairs;     //SHM_CHAIRS
+    shm_memory[2] = -1;         //SHM_WAKING_CLIENT
+    shm_memory[3] = 3;          //SHM_QUEUE_END
     //0 - barber_pid;
     //1 - chairs;
     //2 - queue_end;
@@ -93,9 +101,11 @@ void set_up_semaphores(){
       sem_waiting_room[i] = sem_open(tmp2, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IWGRP, 0);
       if(sem_waiting_room[i] == SEM_FAILED){printf("ERROR sem_waiting_room %s\n", strerror(errno));}
       while(get_semaphore(sem_waiting_room[i], SEM_NOWAIT) != -1){
-        printf("while\n");
       }
       free(tmp2);
+        int tmp;
+        sem_getvalue(sem_waiting_room[i], &tmp);
+        printf("%d\n", tmp);
     }
     fflush(stdout);
     free(tmp);
@@ -103,23 +113,9 @@ void set_up_semaphores(){
     while(get_semaphore(sem_barber, SEM_NOWAIT) != -1);
     while(get_semaphore(sem_barber_walking, SEM_NOWAIT) != -1);
     while(get_semaphore(sem_barber_sleeping, SEM_NOWAIT) != -1);
-    //while(get_semaphore(sem_barber_cutting, SEM_NOWAIT) != -1);
     release_semaphore(sem_barber_sleeping);
 }
-/*
-void hair_is_being_cut(int sig, siginfo_t *siginfo, void *context){
-    barber_cut_client(siginfo->si_pid);
-}
 
-int set_up_receiving_signals(){
-    signal(SIGINT, &clean_and_exit);
-    struct sigaction act;
-    act.sa_sigaction = &hair_is_being_cut;
-    act.sa_flags = SA_SIGINFO;
-    sigemptyset(&act.sa_mask);
-    sigaction(SIGUSR1, &act, NULL);
-}
-*/
 void go_sleep(){
     get_semaphore(sem_barber_sleeping, SEM_WAIT);
     release_semaphore(sem_barber_sleeping);
@@ -190,8 +186,8 @@ void barber_cut_client(int client_pid){
     if(sigqueue(client_pid, SIGRTMIN, val) == -1){
         printf("barber_cut_client sigqueue - err %s\n", strerror(errno));
     }*/
-    shm_memory[SHM_WAKING_CLIENT] = client_pid;
-    release_semaphore(sem_baber_cutting);
+    sem_t* tmp = sem_waiting_room[0];
+    release_semaphore(tmp);
     get_semaphore(sem_barber_walking, SEM_WAIT);
     barber_checks_waiting_room();
 }
