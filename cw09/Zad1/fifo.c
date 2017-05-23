@@ -6,16 +6,19 @@
 #include <thread_db.h>
 #include <fcntl.h>
 #include <signal.h>
-#include "main.h"
+#include "fifo.h"
 
-sem_t* sem_reader;
-sem_t* sem_acq;
+pthread_mutex_t sem_reader, sem_acq;
+pthread_cond_t cond;
 
-int sem_taken;
+int sem_taken, sem_writers;
 int* mem;
 int div_num, option, readers, writers;
 thread_t* writers_t;
 thread_t* readers_t;
+thread_t* queue;
+int queue_length;
+
 void* write(void* unused);
 void* read(void* unused);
 
@@ -28,8 +31,9 @@ void clean_and_exit(int i){
     }
     free(writers_t);
     free(readers_t);
-    sem_destroy(sem_reader);
-    sem_destroy(sem_acq);
+    free(queue);
+    pthread_mutex_destroy(&sem_reader);
+    pthread_mutex_destroy(&sem_acq);
     exit(0);
 }
 
@@ -41,12 +45,14 @@ int main (int argc, char** argv)
     }
     signal(SIGINT, &clean_and_exit);
     sem_taken = 0;
+    sem_writers = 0;
     mem = (int*)calloc(MEM_SIZE, sizeof(int));
 
-    sem_reader = (sem_t*)calloc(1, sizeof(sem_t));
-    sem_acq = (sem_t*)calloc(1, sizeof(sem_t));
-    sem_init(sem_reader, 0, 1);
-    sem_init(sem_acq, 0, 1);
+    queue = (thread_t*)calloc(QUEUE_LENGTH, sizeof(thread_t));
+    queue_length = 0;
+    sem_reader = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+    sem_acq = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+    cond   = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
 
     writers = atoi(argv[1]);
     readers = atoi(argv[2]);
@@ -73,22 +79,32 @@ void* read(void* unused) {
     int j;
     int* indexes = (int*)calloc(MEM_SIZE, sizeof(int));
     int* values = (int*)calloc(MEM_SIZE, sizeof(int));
+    thread_t self = pthread_self();
     while(1){
         int count = 0;
-        sem_wait(sem_acq);
+        pthread_mutex_lock(&sem_acq);
+            while(queue_length >= QUEUE_LENGTH){
+                pthread_cond_wait(&cond, &sem_acq);
+            }
+            queue[queue_length] = self;
+            queue_length++;
+            while(queue[0] != self || sem_writers == 1){
+                pthread_cond_wait(&cond, &sem_acq);
+            }
+            for(int i = 0; i < queue_length; i++){
+                queue[i] = queue[i+1];
+            }
+            queue_length--;
+            pthread_cond_broadcast(&cond);
         if(sem_taken > 0){
             sem_taken++;
         }
         else{
-            if(sem_trywait(sem_reader) == -1){
-                sem_post(sem_acq);
-                continue;
-            }
-            else{
-                sem_taken++;
-            }
+            pthread_mutex_lock(&sem_reader);
+            sem_taken++;
         }
-        sem_post(sem_acq);
+        pthread_mutex_unlock(&sem_acq);
+
 
         j = 0;
         for(int i = 0; i < MEM_SIZE; i++){
@@ -104,22 +120,39 @@ void* read(void* unused) {
             printf("[%d] = %d ", indexes[i], values[i]);
         }
         printf("\n");
-        
-        fflush(stdout);
-        sem_wait(sem_acq);
+
+        pthread_mutex_lock(&sem_acq);
         sem_taken--;
         if(sem_taken == 0){
-            sem_post(sem_reader);
+            pthread_mutex_unlock(&sem_reader);
         }
-        sem_post(sem_acq);
+        pthread_cond_broadcast(&cond);
+        pthread_mutex_unlock(&sem_acq);
     }
     return NULL;
 }
 
 void* write(void* unused) {
     srand(time(NULL));
+    thread_t self = pthread_self();
     while(1) {
-        sem_wait(sem_reader);
+        pthread_mutex_lock(&sem_acq);
+            while(queue_length >= QUEUE_LENGTH){
+                pthread_cond_wait(&cond, &sem_acq);
+            }
+            queue[queue_length] = self;
+            queue_length++;
+            while(queue[0] != self || sem_taken > 0){
+                pthread_cond_wait(&cond, &sem_acq);
+            }
+            for(int i = 0; i < queue_length; i++){
+                queue[i] = queue[i+1];
+            }
+            queue_length--;
+            pthread_mutex_lock(&sem_reader);
+            pthread_cond_broadcast(&cond);
+        pthread_mutex_unlock(&sem_acq);
+
         int size = rand() % MEM_SIZE;
         printf("\n\n=========================\nWriter %ld\n", (long int) pthread_self());
         for(int i = 0; i < size; i++) {
@@ -129,8 +162,8 @@ void* write(void* unused) {
             if(option == 1) printf("[%d] = %d ", index, number);
         }
         printf("\nwriter wrote %d numbers\n=====================\n\n", size);
-
-        sem_post(sem_reader);
+        pthread_mutex_unlock(&sem_reader);
+        pthread_cond_broadcast(&cond);
     }
     return NULL;
 }
