@@ -19,8 +19,8 @@ thread_t* readers_t;
 thread_t* queue;
 int queue_length;
 
-void* write(void* unused);
-void* read(void* unused);
+void* write_t(void* unused);
+void* read_t(void* unused);
 
 void clean_and_exit(int i){
     for (int j = 0; j < writers; j++) {
@@ -61,11 +61,11 @@ int main (int argc, char** argv)
     writers_t = (thread_t*)calloc(writers, sizeof(thread_t*));
     readers_t = (thread_t*)calloc(readers, sizeof(thread_t*));
     for(int i = 0; i < writers; i++) {
-        pthread_create(&writers_t[i], NULL, &write, NULL);
+        pthread_create(&writers_t[i], NULL, &write_t, NULL);
     }
 
     for(int i = 0; i < readers; i++){
-        pthread_create(&readers_t[i], NULL, &read, NULL);
+        pthread_create(&readers_t[i], NULL, &read_t, NULL);
     }
     for (int i = 0; i < writers; i++){
         pthread_join(writers_t[i], NULL);
@@ -75,7 +75,7 @@ int main (int argc, char** argv)
     }
 }
 
-void* read(void* unused) {
+void* read_t(void* unused) {
     int j;
     int* indexes = (int*)calloc(MEM_SIZE, sizeof(int));
     int* values = (int*)calloc(MEM_SIZE, sizeof(int));
@@ -88,7 +88,7 @@ void* read(void* unused) {
             }
             queue[queue_length] = self;
             queue_length++;
-            while(queue[0] != self || sem_writers == 1){
+            while(!pthread_equal(queue[0], self) || sem_writers > 0){
                 pthread_cond_wait(&cond, &sem_acq);
             }
             for(int i = 0; i < queue_length; i++){
@@ -115,11 +115,6 @@ void* read(void* unused) {
                 j++;
             }
         }
-        printf("\n\nreader %ld found: %d\n", (long int)pthread_self(), count);
-        for(int i = 0; i < j && option == 1; i++){
-            printf("[%d] = %d ", indexes[i], values[i]);
-        }
-        printf("\n");
 
         pthread_mutex_lock(&sem_acq);
         sem_taken--;
@@ -128,11 +123,16 @@ void* read(void* unused) {
         }
         pthread_cond_broadcast(&cond);
         pthread_mutex_unlock(&sem_acq);
+        printf("\n\nreader %ld found: %d\n", (long int)pthread_self(), count);
+        for(int i = 0; i < j && option == 1; i++){
+            printf("[%d] = %d ", indexes[i], values[i]);
+        }
+        printf("\n");
     }
     return NULL;
 }
 
-void* write(void* unused) {
+void* write_t(void* unused) {
     srand(time(NULL));
     thread_t self = pthread_self();
     while(1) {
@@ -142,14 +142,15 @@ void* write(void* unused) {
             }
             queue[queue_length] = self;
             queue_length++;
-            while(queue[0] != self || sem_taken > 0){
+            while(!pthread_equal(queue[0], self) || sem_taken > 0){
                 pthread_cond_wait(&cond, &sem_acq);
             }
             for(int i = 0; i < queue_length; i++){
-                queue[i] = queue[i+1];
+                queue[i] = queue[i + 1];
             }
             queue_length--;
             pthread_mutex_lock(&sem_reader);
+            sem_writers++;
             pthread_cond_broadcast(&cond);
         pthread_mutex_unlock(&sem_acq);
 
@@ -162,6 +163,7 @@ void* write(void* unused) {
             if(option == 1) printf("[%d] = %d ", index, number);
         }
         printf("\nwriter wrote %d numbers\n=====================\n\n", size);
+        sem_writers--;
         pthread_mutex_unlock(&sem_reader);
         pthread_cond_broadcast(&cond);
     }

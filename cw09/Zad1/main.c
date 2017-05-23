@@ -16,8 +16,8 @@ int* mem;
 int div_num, option, readers, writers;
 thread_t* writers_t;
 thread_t* readers_t;
-void* write(void* unused);
-void* read(void* unused);
+void* write_t(void* unused);
+void* read_t(void* unused);
 
 void clean_and_exit(int i){
     for (int j = 0; j < writers; j++) {
@@ -54,12 +54,13 @@ int main (int argc, char** argv)
     option = atoi(argv[4]);
     writers_t = (thread_t*)calloc(writers, sizeof(thread_t*));
     readers_t = (thread_t*)calloc(readers, sizeof(thread_t*));
+
     for(int i = 0; i < writers; i++) {
-        pthread_create(&writers_t[i], NULL, &write, NULL);
+        pthread_create(&writers_t[i], NULL, &write_t, NULL);
     }
 
     for(int i = 0; i < readers; i++){
-        pthread_create(&readers_t[i], NULL, &read, NULL);
+        pthread_create(&readers_t[i], NULL, &read_t, NULL);
     }
     for (int i = 0; i < writers; i++){
         pthread_join(writers_t[i], NULL);
@@ -69,7 +70,7 @@ int main (int argc, char** argv)
     }
 }
 
-void* read(void* unused) {
+void* read_t(void* unused) {
     int j;
     int* indexes = (int*)calloc(MEM_SIZE, sizeof(int));
     int* values = (int*)calloc(MEM_SIZE, sizeof(int));
@@ -80,13 +81,8 @@ void* read(void* unused) {
             sem_taken++;
         }
         else{
-            if(sem_trywait(sem_reader) == -1){
-                sem_post(sem_acq);
-                continue;
-            }
-            else{
-                sem_taken++;
-            }
+            sem_wait(sem_reader);
+            sem_taken++;
         }
         sem_post(sem_acq);
 
@@ -99,24 +95,26 @@ void* read(void* unused) {
                 j++;
             }
         }
+
         printf("\n\nreader %ld found: %d\n", (long int)pthread_self(), count);
-        for(int i = 0; i < j && option == 1; i++){
+        if(option == 1)for(int i = 0; i < j; i++){
             printf("[%d] = %d ", indexes[i], values[i]);
         }
         printf("\n");
-        
-        fflush(stdout);
+
         sem_wait(sem_acq);
         sem_taken--;
         if(sem_taken == 0){
             sem_post(sem_reader);
         }
+
         sem_post(sem_acq);
+
     }
     return NULL;
 }
 
-void* write(void* unused) {
+void* write_t(void* unused) {
     srand(time(NULL));
     while(1) {
         sem_wait(sem_reader);
