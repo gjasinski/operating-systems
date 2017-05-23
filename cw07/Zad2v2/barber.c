@@ -2,7 +2,7 @@
 #include "string.h"
 
 int chairs;
-int shm_desc;
+int shm_desc, first_client;
 int *shm_memory;
 sem_t* sem_barber;
 sem_t* sem_barber_walking;
@@ -34,6 +34,8 @@ void barber_cut_client(int client_pid);
 //int set_up_receiving_signals();
 
 int get_semaphore(sem_t* sem, int block);
+
+void print_info(char* info, int pid);
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
@@ -87,7 +89,7 @@ void set_up_semaphores(){
     sem_barber = sem_open(SEM_BARBER, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IWGRP, 0);
     sem_barber_walking = sem_open(SEM_BARBER_WALKING, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IWGRP, 0);
     sem_barber_sleeping = sem_open(SEM_BARBER_SLEEPING, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IWGRP, 0);
-    //sem_barber_cutting = sem_open(SEM_BARBER_SLEEPING, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IWGRP, 0);
+    sem_baber_cutting = sem_open(SEM_CUTTING, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IWGRP, 0);
     sem_waiting_room = (sem_t**)calloc(chairs, sizeof(sem_t));
     char* tmp = (char*)calloc(3, sizeof(char));
 
@@ -113,12 +115,18 @@ void set_up_semaphores(){
     while(get_semaphore(sem_barber, SEM_NOWAIT) != -1);
     while(get_semaphore(sem_barber_walking, SEM_NOWAIT) != -1);
     while(get_semaphore(sem_barber_sleeping, SEM_NOWAIT) != -1);
+    while(get_semaphore(sem_baber_cutting, SEM_NOWAIT) != -1);
     release_semaphore(sem_barber_sleeping);
 }
 
 void go_sleep(){
+    print_info("asleep", 0);
+    get_semaphore(sem_barber_sleeping, SEM_NOWAIT);
+    release_semaphore(sem_barber);
+    release_semaphore(sem_barber_walking);
     get_semaphore(sem_barber_sleeping, SEM_WAIT);
     release_semaphore(sem_barber_sleeping);
+    first_client = 1;
     barber_cut_client(shm_memory[2]);
 }
 char* get_time(){
@@ -170,7 +178,7 @@ int get_next_client(){
         sem_t* tmp;
         tmp = sem_waiting_room[0];
         for(int i = 0; i < chairs - 1; i++){
-          sem_waiting_room[i] == sem_waiting_room[i + 1];
+          sem_waiting_room[i] = sem_waiting_room[i + 1];
         }
         sem_waiting_room[chairs-1] = tmp;
         release_semaphore(tmp);
@@ -186,7 +194,13 @@ void barber_cut_client(int client_pid){
     if(sigqueue(client_pid, SIGRTMIN, val) == -1){
         printf("barber_cut_client sigqueue - err %s\n", strerror(errno));
     }*/
-    sem_t* tmp = sem_waiting_room[0];
+    sem_t* tmp;
+    if(first_client == 1) {
+        tmp = sem_baber_cutting;
+        first_client = 0;
+    }else {
+        tmp = sem_waiting_room[0];
+    }
     release_semaphore(tmp);
     get_semaphore(sem_barber_walking, SEM_WAIT);
     barber_checks_waiting_room();
@@ -195,10 +209,6 @@ void barber_cut_client(int client_pid){
 void barber_checks_waiting_room(){
     int next_client = get_next_client();
     if(next_client == -1){
-        print_info("asleep", 0);
-        release_semaphore(sem_barber);
-        release_semaphore(sem_barber_walking);
-        get_semaphore(sem_barber_sleeping, SEM_NOWAIT);
         go_sleep();
     }
     else{

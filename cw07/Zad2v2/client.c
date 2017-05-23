@@ -1,7 +1,7 @@
 #include "common.h"
 #include "string.h"
 
-sem_t* sem_barber, * sem_barber_walking, * sem_barber_sleeping;
+sem_t* sem_barber, * sem_barber_walking, * sem_barber_sleeping, * sem_barber_cutting;
 int cuts;
 pid_t barber_pid;
 int shm_desc;
@@ -46,6 +46,7 @@ int main(int argc, char* argv[]) {
     sem_barber = sem_open(SEM_BARBER, 0);
     sem_barber_walking = sem_open(SEM_BARBER_WALKING, 0);
     sem_barber_sleeping = sem_open(SEM_BARBER_SLEEPING, 0);
+    sem_barber_cutting = sem_open(SEM_CUTTING, 0);
     if(sem_barber == SEM_FAILED || sem_barber_walking == SEM_FAILED) printf("set_up_semaphores %s\n", strerror(errno));
 
     //te semafory raczej nie sa potrzebne
@@ -127,8 +128,7 @@ void wake_up_barber(){
     shm_memory[SHM_WAKING_CLIENT] = getpid();
     print_info("is waking up barber", getpid());
     release_semaphore(sem_barber_sleeping);
-    get_time();
-    get_time();
+    get_semaphore(sem_barber_cutting, SEM_WAIT);
     print_info("left barber after cutting", getpid());
     cuts--;
     if(cuts == 0) exit(0);
@@ -153,10 +153,12 @@ void sit_in_waiting_room(){
     get_semaphore(cutting_sem, SEM_WAIT);
     sem_getvalue(cutting_sem, &tmp);
     print_info("left barber after cutting", getpid());
-    release_semaphore(cutting_sem);
+    //release_semaphore(cutting_sem);
     cuts--;
+    if(cuts == 0) exit(0);
     sem_getvalue(cutting_sem, &tmp);
     printf("%d\n", tmp);
+    go_to_barber();
 }
 
 void go_to_barber() {
@@ -164,6 +166,7 @@ void go_to_barber() {
     if(get_semaphore(sem_barber, SEM_NOWAIT) == 0){
         release_semaphore(sem_barber_walking);
         wake_up_barber();
+        go_to_barber();
     }
     sit_in_waiting_room();
 }
