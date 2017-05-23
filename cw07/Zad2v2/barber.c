@@ -127,7 +127,13 @@ void go_sleep(){
     get_semaphore(sem_barber_sleeping, SEM_WAIT);
     release_semaphore(sem_barber_sleeping);
     first_client = 1;
-    barber_cut_client(shm_memory[2]);
+    //barber_cut_client(shm_memory[2]);
+    print_info("start cutting client with pid: ", shm_memory[2]);
+    print_info("finish cutting client with pid: ", shm_memory[2]);
+    
+    release_semaphore(sem_baber_cutting);
+    get_semaphore(sem_barber_walking, SEM_WAIT);
+    barber_checks_waiting_room();
 }
 char* get_time(){
     struct timespec tp;
@@ -163,15 +169,18 @@ int get_semaphore(sem_t* sem, int block){
 void release_semaphore(sem_t* sem){
     if (sem_post(sem) == -1) printf("release_semaphore %s", strerror(errno));
 }
-
+void barber_checks_waiting_room();
+void barber_cut_client(int client_pid);
 int get_next_client(){
     int result = -1;
     //3 since 0, 1, 2, 3 are occupied
-    printf("AAA\n");
+    printf("AAA %d\n", shm_memory[SHM_QUEUE_END]);
     fflush(stdout);
     if(shm_memory[SHM_QUEUE_END] > 3){
+        release_semaphore(sem_barber_walking);
+        barber_cut_client(shm_memory[4]);
         result = shm_memory[4];
-        for(int i = 4; i < shm_memory[3] - 1; i++){
+        for(int i = 4; i < shm_memory[3]; i++){
             shm_memory[i] = shm_memory[i + 1];
         }
         shm_memory[SHM_QUEUE_END]--;
@@ -181,7 +190,7 @@ int get_next_client(){
           sem_waiting_room[i] = sem_waiting_room[i + 1];
         }
         sem_waiting_room[chairs-1] = tmp;
-        release_semaphore(tmp);
+        barber_checks_waiting_room();
     }
     return result;
 }
@@ -194,16 +203,16 @@ void barber_cut_client(int client_pid){
     if(sigqueue(client_pid, SIGRTMIN, val) == -1){
         printf("barber_cut_client sigqueue - err %s\n", strerror(errno));
     }*/
-    sem_t* tmp;
+    /*sem_t* tmp;
     if(first_client == 1) {
         tmp = sem_baber_cutting;
         first_client = 0;
     }else {
         tmp = sem_waiting_room[0];
-    }
-    release_semaphore(tmp);
+    }*/
+    release_semaphore(sem_waiting_room[0]);
     get_semaphore(sem_barber_walking, SEM_WAIT);
-    barber_checks_waiting_room();
+    //barber_checks_waiting_room();
 }
 
 void barber_checks_waiting_room(){

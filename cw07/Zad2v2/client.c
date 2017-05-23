@@ -90,9 +90,9 @@ void print_sem_value(sem_t* sem, char* sinfo){
 */
 
 int get_semaphore(sem_t* sem, int block){
-    int tmp;
+    /*int tmp;
     sem_getvalue(sem, &tmp);
-    printf("%d\n", tmp);
+    printf("%d\n", tmp);*/
     if (block == 1){
         if (sem_wait(sem) == -1) {
             return -1;
@@ -137,13 +137,13 @@ void wake_up_barber(){
 void sit_in_waiting_room(){
     int res = add_client_to_shm();
     sem_t* cutting_sem = sem_waiting_room[shm_memory[SHM_QUEUE_END] - 4];
-    printf("%d \n", shm_memory[SHM_QUEUE_END] - 4);
+    /*printf("%d \n", shm_memory[SHM_QUEUE_END] - 4);
     int tmp;
     sem_getvalue(cutting_sem, &tmp);
-    printf("%d\n", tmp);
+    printf("%d\n", tmp);*/
     release_semaphore(sem_barber_walking);
-    sem_getvalue(cutting_sem, &tmp);
-    printf("%d\n", tmp);
+    //sem_getvalue(cutting_sem, &tmp);
+    //printf("%d\n", tmp);
     if (res == -1) {
         print_info("left barber - no seat in waiting room ", getpid());
         go_to_barber();
@@ -151,13 +151,13 @@ void sit_in_waiting_room(){
 
     print_info("take a seat in waiting room", getpid());
     get_semaphore(cutting_sem, SEM_WAIT);
-    sem_getvalue(cutting_sem, &tmp);
+    //sem_getvalue(cutting_sem, &tmp);
     print_info("left barber after cutting", getpid());
     //release_semaphore(cutting_sem);
     cuts--;
     if(cuts == 0) exit(0);
-    sem_getvalue(cutting_sem, &tmp);
-    printf("%d\n", tmp);
+    //sem_getvalue(cutting_sem, &tmp);
+    //printf("%d\n", tmp);
     go_to_barber();
 }
 
@@ -168,5 +168,7 @@ void go_to_barber() {
         wake_up_barber();
         go_to_barber();
     }
-    sit_in_waiting_room();
+
+      sit_in_waiting_room();
+
 }
