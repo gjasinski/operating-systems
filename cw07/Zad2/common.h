@@ -21,20 +21,17 @@
 #define QUEUE_SIZE 128
 #define BARBER 1
 #define SEM_BARBER "/sem_barber"
-#define SEM_BARBER_WALKING "/sem_barber_walking"
-#define SHM_NAME "/home"
+#define SEM_QUEUE "/sem_queue"
+#define SEM_BARBER_SLEEPING "/sem_barber_sleeping"
+#define SEM_CUTTING "sem_cutting"
+#define SHM_NAME_QUEUE "/homeq"
+#define SHM_NAME_SEMAPHORES "/homes"
 #define SHM_SIZE 128
 #define SEM_NOWAIT 0
 #define SEM_WAIT 1
 #define SHM_BARBER_PID 0
 #define SHM_CHAIRS 1
-#define SHM_ARRAY_END 2
+#define SHM_WAKING_CLIENT 2
+#define SHM_QUEUE_END 3
 
-struct msg_b {
-    long mtype;       /* message type, must be > 0 */;
-    pid_t barber_pid;
-    int chairs;
-    int queue_end;
-    int queue[QUEUE_SIZE];
-};
 #endif //ZAD1_COMMON_H

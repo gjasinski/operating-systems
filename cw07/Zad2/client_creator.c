@@ -1,3 +1,4 @@
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -16,7 +17,7 @@ int main(int argc, char* argv[]) {
     arg[0] = "./client";
     arg[1] = argv[2];
     arg[2] = NULL;
-    for (int i; i < clients; i++){
+    for (int i = 0; i < clients; i++){
         pid_t pid = fork();
         if(pid == 0){
             if(execvp("./client", arg) == -1){
