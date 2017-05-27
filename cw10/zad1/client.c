@@ -75,32 +75,42 @@ void receive_compute_send_loop(char** argv){
     char* buf = (char*)calloc(NAME_SIZE_MAX, sizeof(char));
     buf[0] = OP_SEND_NAME;
     buf[1] = sizeof(argv[1]);
-    //memcpy(buf + 2, argv[1], sizeof(argv[1]));
     sprintf(buf+2, "%s", argv[1]);
 
-    //if(write(socket_desc, (void *)buf, sizeof(buf)) == -1){
-    printf("%d\n", (int)write(socket_desc, (void *)buf, strlen(argv[1]) + 2));/*
+    if(write(socket_desc, (void *)buf, sizeof(buf)) == -1){
+    //printf("%d\n", (int)write(socket_desc, (void *)buf, strlen(argv[1]) + 2));/*
         printf("Sending name err - %s\n", strerror(errno));
-    }*/
-    //printf("%dwysalem %s",strlen(argv[1]) + 2, buf+2);
-    fflush(stdout);
+    }
+
     while(1){
-        int received_bytes = read(socket_desc, buf, NAME_SIZE_MAX);
-        if(received_bytes == -1 || received_bytes - 1 != buf[1] + buf[2]){
+        /*int received_bytes = */read(socket_desc, buf, NAME_SIZE_MAX);
+        /*if(received_bytes == -1 || received_bytes - 1 != buf[1] + buf[2]){
             printf("Receive msg err - %s\n", strerror(errno));
-        }
+        }*/
         if(buf[0] == OP_EXIT) break;
-        int a = atoi(buf + 3);
-        int b = atoi(buf + 3 + buf[1]);
+        if(buf[0] == OP_REJECT){
+            printf("This name is occupied\n");
+            break;
+        }
+        if(buf[0] == OP_PING){
+            write(socket_desc, buf, 2);
+            continue;
+        }
+        //0 - operation 1 - id // 2 - len1 // 3 - len2
+        int a = atoi(buf + 4);
+        int b = atoi(buf + 5 + buf[2]);
         result = -1;
         if(buf[0] == OP_ADD) result = a + b;
         if(buf[0] == OP_SUB) result = a - b;
         if(buf[0] == OP_MUL) result = a * b;
         if(buf[0] == OP_DIV) result = a / b;
-        if(result == -1) printf("Client error unknown msg_id - %d\n", buf[0]);
+        if(result == -1) {
+            printf("Client error unknown msg_id - %d - ignoring\n", buf[0]);
+            continue;
+        }
         buf[0] = OP_RES;
-        sprintf(buf + 2, "%ld", result);
-        buf[1] = sizeof(buf + 2);
+        sprintf(buf + 3, "%ld", result);
+        buf[2] = strlen(buf + 3);
         if(write(socket_desc, buf, sizeof(buf)) == -1){
             printf("Send msg err - %s\n", strerror(errno));
         }
