@@ -57,7 +57,7 @@ void net_loop(char** argv){
     sin_addr.s_addr = htonl(address);
     struct sockaddr_in inet_addr;
     inet_addr.sin_family = AF_INET;
-    inet_addr.sin_port = htobe16(port);
+    inet_addr.sin_port = port;
     inet_addr.sin_addr = sin_addr;
 
     if(connect(socket_desc, (struct sockaddr *)&inet_addr, sizeof(inet_addr)) == -1){
@@ -75,10 +75,11 @@ void receive_compute_send_loop(char** argv){
     char* buf = (char*)calloc(NAME_SIZE_MAX, sizeof(char));
     buf[0] = OP_SEND_NAME;
     buf[1] = sizeof(argv[1]);
-    memcpy(buf + 2, argv[1], sizeof(argv[1]));
+    //memcpy(buf + 2, argv[1], sizeof(argv[1]));
+    sprintf(buf+2, "%s", argv[1]);
 
     //if(write(socket_desc, (void *)buf, sizeof(buf)) == -1){
-    printf("%d\n", write(socket_desc, (void *)buf, strlen(argv[1]) + 2));/*
+    printf("%d\n", (int)write(socket_desc, (void *)buf, strlen(argv[1]) + 2));/*
         printf("Sending name err - %s\n", strerror(errno));
     }*/
     //printf("%dwysalem %s",strlen(argv[1]) + 2, buf+2);
