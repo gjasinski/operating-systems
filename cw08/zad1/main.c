@@ -1,5 +1,3 @@
-#define _POSIX_C_SOURCE 200112L
-#define _XOPEN_SOURCE 700
 #include <errno.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -7,8 +5,6 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <signal.h>
-
 
 #define RECORD_SIZE 1024
 
@@ -16,7 +12,6 @@ int thread_amount;
 int option;
 char* file_name;
 int record_number;
-int signal_arg;
 char* searched_word;
 FILE* file_ptr;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -29,87 +24,66 @@ void asynchronous_threads();
 void synchronous_threads();
 void detached_threads();
 
-void handle_sigusr1(int i){
-  printf("sigusr1 PID %d TID %ld\n", getpid(), pthread_self());
-  exit(0);
-}
-
-
-void handle_sigterm(int i){
-  printf("sigterm PID %d TID %ld\n", getpid(), pthread_self());
-  exit(0);
-}
-
-
-void handle_sigkill(int i){
-  printf("sigkill PID %d TID %ld\n", getpid(), pthread_self());
-  exit(0);
-}
-
-void handle_sigstop(int i){
-  printf("sigstop PID %d TID %ld\n", getpid(), pthread_self());
-  exit(0);
-}
-
-void set_sigtstp_handler() {
-    signal(SIGUSR1, &handle_sigusr1);
-    signal(SIGTERM, &handle_sigterm);
-    signal(SIGKILL, &handle_sigkill);
-    signal(SIGSTOP, &handle_sigstop);
-}
-
 int main (int argc, char** argv)
 {
-set_sigtstp_handler();
-    /*sigset_t * new_set;
-    sigemptyset(new_set);
-    sigaddset(new_set, SIGUSR1);
-    sigaddset(new_set, SIGTERM);
-    sigaddset(new_set, SIGKILL);
-    sigaddset(new_set, SIGSTOP);
-    sigprocmask(SIG_BLOCK, new_set, NULL);*/
-    sigset_t * new_set;
-    sigemptyset(new_set);
-    sigaddset(new_set, SIGUSR1);
-    sigaddset(new_set, SIGTERM);
-    sigprocmask(SIG_BLOCK, new_set, NULL);
-    if(argc != 4){
-        printf("./main option thread_amount\n");
+    if(argc != 6){
+        printf("./main option thread_amount file_name record_number searched_word\n");
         exit(-1);
     }
     option = atoi(argv[1]);
     thread_amount = atoi(argv[2]);
-    signal_arg = atoi(argv[3]);
+    file_name = argv[3];
+    record_number = atoi(argv[4]);
+    searched_word = argv[5];
+
+    file_ptr = fopen(file_name, "r");
+    if(file_ptr == NULL){
+        printf("Couldn't open file %s\n", strerror(errno));
+    }
+
     if(option == 1) asynchronous_threads();
     if(option == 2) synchronous_threads();
     if(option == 3) detached_threads();
     return 0;
 }
+int search_words(){
+    int end_of_reading = 0;
+    int position = ftell(file_ptr) / 1028;
+    size_t read_chars = fread(buffer, RECORD_SIZE + 4, record_number, file_ptr);
 
+    if(read_chars > 0){
+        for(int i = 0; i < record_number && end_of_reading == 0; i++){
+            char* searched_str = strstr(buffer + 4, searched_word);
+            if(searched_str != NULL) {
+                int tmp = (int)(searched_str - buffer);
+                end_of_reading = 1;
+                printf("Thread %ld found \"%s\" at position %d\n", (long int)pthread_self(), searched_word, position + tmp/1028);
+                for (int j = 0; j < thread_amount && option != 3; j++) {
+                    pthread_t self = pthread_self();
+                    if (!pthread_equal(self, threads[j])) {
+                        pthread_cancel(threads[j]);
+                        exit(0);
+                    }
+                }
+                fflush(stdout);
+                return end_of_reading;
+            }
+        }
+    }
+    return end_of_reading;
+}
 void* asynchronous_read(void* unused){
-/*  sigset_t * new_set;
-  sigemptyset(new_set);
-  sigaddset(new_set, SIGUSR1);
-  sigaddset(new_set, SIGTERM);
-  sigprocmask(SIG_BLOCK, new_set, NULL);*/
-    //set_sigtstp_handler();
     buffer = (char*)calloc(record_number * (RECORD_SIZE + 4), sizeof(char));
-    /*pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
+    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
     pthread_setspecific(buffer_key, buffer);
     pthread_mutex_lock(&mutex_init);
     pthread_mutex_unlock(&mutex_init);
-*/
-    int end_of_reading = 0;
 
-    if(pthread_equal(pthread_self(), threads[1])){
-      int a = 0;
-      int b = 3;
-      int c = b /a;
-      printf("%d\n", c);
-    }
-    while(1){
-        printf("Thread %ld\n\n", (long int)pthread_self());
-        sleep(1);
+    int end_of_reading = 0;
+    while(end_of_reading == 0){
+        pthread_mutex_lock(&mutex);
+        end_of_reading = search_words();
+        pthread_mutex_unlock(&mutex);
     }
     return NULL;
 }
@@ -122,11 +96,16 @@ void* synchronous_read(void* unused){
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
     pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
 
+    int end_of_reading = 0;
+
     pthread_testcancel();
 
-    while(1){
-        printf("Thread %ld\n\n", (long int)pthread_self());
-        sleep(1);
+    while(end_of_reading == 0){
+        pthread_testcancel();
+        pthread_mutex_lock(&mutex);
+        end_of_reading = search_words();
+        pthread_mutex_unlock(&mutex);
+        pthread_testcancel();
     }
 
     fflush(stdout);
@@ -139,9 +118,11 @@ void* detached_read(void* unused){
     pthread_mutex_lock(&mutex_init);
     pthread_mutex_unlock(&mutex_init);
 
-    while(1){
-        printf("Thread %ld\n\n", (long int)pthread_self());
-        sleep(1);
+    int end_of_reading = 0;
+    while(end_of_reading == 0){
+        pthread_mutex_lock(&mutex);
+        end_of_reading = search_words();
+        pthread_mutex_unlock(&mutex);
     }
     return NULL;
 }
@@ -151,7 +132,6 @@ void free_buffer(void* buffer) {
 }
 
 void asynchronous_threads(){
-    pthread_attr_t attr;
     threads = (pthread_t*)calloc(thread_amount, sizeof(pthread_t));
     pthread_key_create(&buffer_key, free_buffer);
     pthread_mutex_lock(&mutex_init);
@@ -160,10 +140,6 @@ void asynchronous_threads(){
         pthread_create(&threads[i], NULL, &asynchronous_read, NULL);
     }
     pthread_mutex_unlock(&mutex_init);
-    //if(signal_arg == 1) pthread_kill(threads[1], SIGUSR1);
-    //if(signal_arg == 2) pthread_kill(threads[1], SIGTERM);
-  //  if(signal_arg == 3) pthread_kill(threads[1], SIGKILL);
-    //if(signal_arg == 4) pthread_kill(threads[1], SIGSTOP);
 
     for (int i = 0; i < thread_amount; i++){
         pthread_join(threads[i], NULL);
@@ -171,7 +147,6 @@ void asynchronous_threads(){
 };
 
 void synchronous_threads(){
-    pthread_attr_t attr;
     threads = (pthread_t*)calloc(thread_amount, sizeof(pthread_t));
     pthread_key_create(&buffer_key, free_buffer);
     pthread_mutex_lock(&mutex_init);
@@ -188,7 +163,6 @@ void synchronous_threads(){
 };
 
 void detached_threads(){
-    pthread_attr_t attr;
     threads = (pthread_t*)calloc(thread_amount, sizeof(pthread_t));
     pthread_key_create(&buffer_key, free_buffer);
     pthread_mutex_lock(&mutex_init);
@@ -197,8 +171,9 @@ void detached_threads(){
         pthread_detach(threads[i]);
     }
     pthread_mutex_unlock(&mutex_init);
-        for (int i = 0; i < thread_amount; i++){
+
+    for (int i = 0; i < thread_amount; i++){
         pthread_join(threads[i], NULL);
     }
-    while(1){};
+    sleep(2);
 };

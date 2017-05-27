@@ -19,7 +19,7 @@ pid_t barber_pid;
 
 int get_queue();
 
-int set_up_receiving_signals();
+void set_up_receiving_signals();
 
 key_t get_key(int key);
 
@@ -55,7 +55,7 @@ key_t get_key(int key){
 }
 
 int get_queue(){
-    struct msg_b buf;
+
     int queue = msgget(get_key(BARBER), 0);
     if(queue <= 0){
         printf("get_queue - err");
@@ -80,7 +80,7 @@ void hair_is_being_cut(int sig, siginfo_t *siginfo, void *context){
     go_to_barber();
 }
 
-int set_up_receiving_signals(){
+void set_up_receiving_signals(){
     sigset_t s;
     sigemptyset(&s);
     sigaddset(&s, SIGRTMIN);

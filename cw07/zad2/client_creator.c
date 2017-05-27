@@ -11,7 +11,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     int clients = atol(argv[1]);
-    int cuts= atol(argv[2]);
+
     int* clients_pid = (int*)calloc(clients, sizeof(int));
     char* arg[3];
     arg[0] = "./client";

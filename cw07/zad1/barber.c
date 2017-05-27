@@ -17,7 +17,7 @@ int MSGBUF_SIZE = sizeof(struct msg_b) - sizeof(long);
 int chairs;
 int queue_key;
 int set_id_1, set_id_2;
-int set_up_queue();
+void set_up_queue();
 
 void clean_and_exit(int i);
 
@@ -27,7 +27,7 @@ void set_up_semaphores();
 
 void barber_cut_client(int client_pid);
 
-int set_up_receiving_signals();
+void set_up_receiving_signals();
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
     set_up_receiving_signals();
     set_up_semaphores();
     barber_checks_waiting_room();
-    while(1){}
+    return 0;
 }
 
 key_t get_key(int key){
@@ -47,7 +47,7 @@ key_t get_key(int key){
     return ftok(env_home, key);
 }
 
-int set_up_queue(){
+void set_up_queue(){
     queue_key = msgget(get_key(BARBER), IPC_CREAT | S_IRUSR | S_IWUSR | S_IWGRP);
     struct msg_b buf;
     buf.mtype = 1;
@@ -80,7 +80,7 @@ void hair_is_being_cut(int sig, siginfo_t *siginfo, void *context){
     barber_cut_client(siginfo->si_pid);
 }
 
-int set_up_receiving_signals(){
+void set_up_receiving_signals(){
     signal(SIGINT, &clean_and_exit);
     struct sigaction act;
     act.sa_sigaction = &hair_is_being_cut;
