@@ -2,7 +2,7 @@
 #define ZAD1_COMMON_H
 
 #define UNIX_PATH_MAX 108
-#define CLIENTS_MAX 20
+#define CLIENTS_MAX 200
 #define EVENTS_MAX 20
 #define NAME_SIZE_MAX 128
 #define OP_SEND_NAME 0 //client -> server
@@ -14,6 +14,7 @@
 #define OP_EXIT 6
 #define OP_REJECT 7 //server -> client
 #define OP_PING 8
+#define OP_FPE 9
 
 #include <stdlib.h>
 #include <stdio.h>

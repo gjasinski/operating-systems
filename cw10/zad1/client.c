@@ -73,45 +73,63 @@ void net_loop(char** argv){
 void receive_compute_send_loop(char** argv){
     long int result;
     char* buf = (char*)calloc(NAME_SIZE_MAX, sizeof(char));
-    buf[0] = OP_SEND_NAME;
-    buf[1] = sizeof(argv[1]);
-    sprintf(buf+2, "%s", argv[1]);
-
-    if(write(socket_desc, (void *)buf, sizeof(buf)) == -1){
-    //printf("%d\n", (int)write(socket_desc, (void *)buf, strlen(argv[1]) + 2));/*
+    char sign[5];
+    sign[1] = '+';
+    sign[2] = '-';
+    sign[3] = '*';
+    sign[4] = '/';
+    sprintf(buf, "%c%c%s", OP_SEND_NAME, (int)sizeof(argv[1]), argv[1]);
+    if(write(socket_desc, (void *)buf, strlen(argv[1]) + 2) == -1){
         printf("Sending name err - %s\n", strerror(errno));
     }
-
     while(1){
-        /*int received_bytes = */read(socket_desc, buf, NAME_SIZE_MAX);
-        /*if(received_bytes == -1 || received_bytes - 1 != buf[1] + buf[2]){
+        free(buf);
+        buf = (char*)calloc(NAME_SIZE_MAX, sizeof(char));
+        printf("read %d\n", read(socket_desc, buf, NAME_SIZE_MAX));
+        /*if(read(socket_desc, buf, NAME_SIZE_MAX) == -1){
             printf("Receive msg err - %s\n", strerror(errno));
         }*/
-        if(buf[0] == OP_EXIT) break;
+        if(buf[0] == OP_EXIT) {
+            printf("[EXIT] Terminating client\n");
+            break;
+        }
         if(buf[0] == OP_REJECT){
-            printf("This name is occupied\n");
+            printf("[REJECT] This name is occupied\n");
             break;
         }
         if(buf[0] == OP_PING){
+            printf("[PING]\n");
             write(socket_desc, buf, 2);
             continue;
         }
-        //0 - operation 1 - id // 2 - len1 // 3 - len2
+        //0 - operation// 1 - id // 2 - len1 // 3 - len2
         int a = atoi(buf + 4);
         int b = atoi(buf + 5 + buf[2]);
         result = -1;
         if(buf[0] == OP_ADD) result = a + b;
         if(buf[0] == OP_SUB) result = a - b;
         if(buf[0] == OP_MUL) result = a * b;
-        if(buf[0] == OP_DIV) result = a / b;
+        if(buf[0] == OP_DIV) {
+            if(b == 0){
+                printf("[%d] FLOATING POINT EXCEPTION\n", buf[1]);
+                buf[0] = OP_FPE;
+                buf[2] = 0;
+                write(socket_desc, (void*)buf, 3);
+                continue;
+            }
+            result = a / b;
+        }
         if(result == -1) {
-            printf("Client error unknown msg_id - %d - ignoring\n", buf[0]);
+            printf("[UNKNOWN] Client error unknown msg_id - %d - ignoring\n", buf[0]);
             continue;
+        }
+        else{
+            printf("[%d] %d %c %d = %ld", buf[1], a, sign[buf[0]], b, result);
         }
         buf[0] = OP_RES;
         sprintf(buf + 3, "%ld", result);
         buf[2] = strlen(buf + 3);
-        if(write(socket_desc, buf, sizeof(buf)) == -1){
+        if(write(socket_desc, (void*)buf, strlen(buf + 3) + 3) == -1){
             printf("Send msg err - %s\n", strerror(errno));
         }
     }
@@ -124,6 +142,12 @@ void receive_compute_send_loop(char** argv){
     }
 }
 void clear_and_exit(int n){
+    char buf[2];
+    buf[0] = OP_EXIT;
+    buf[1] = 0;
+    if(write(socket_desc, (void*)buf, 2) == -1){
+        printf("Send exit_info err - %s\n", strerror(errno));
+    }
     if(shutdown(socket_desc, SHUT_RDWR) == -1){
         printf("Shutdown err - %s\n", strerror(errno));
     }
