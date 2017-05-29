@@ -35,7 +35,7 @@ void local_loop(char** argv){
     struct sockaddr_un unix_addr;
     unix_addr.sun_family = AF_UNIX;
     memcpy(unix_addr.sun_path, argv[2], sizeof(argv[2]));
-
+    
     if(connect(socket_desc, (struct sockaddr *)&unix_addr, sizeof(unix_addr)) == -1){
         printf("connect socket error %s\n", strerror(errno));
         exit(-1);
@@ -44,6 +44,26 @@ void local_loop(char** argv){
 }
 
 void net_loop(char** argv){
+    /*char address[108];
+
+    strcpy(address, strsep(&argv[3], ":"));
+    port = (short)atoi(argv[3]);
+    struct sockaddr_in* stSockAddr = malloc(sizeof(struct sockaddr_in));
+    SocketFD = socket(PF_INET, SOCK_DGRAM, 0);
+
+    if (-1 == SocketFD) {
+        perror("cannot create socket");
+        exit(EXIT_FAILURE);
+    }
+
+    memset(stSockAddr, 0, sizeof(*stSockAddr));
+
+    stSockAddr->sin_family = AF_INET;
+    stSockAddr->sin_port = htons(port);
+    assert(inet_pton(AF_INET, address, &stSockAddr->sin_addr) > 0);
+
+    srv_name = (struct sockaddr *)stSockAddr;
+    */
     socket_desc = socket(AF_INET, SOCK_STREAM, 0);
     if(socket_desc == -1) {
         printf("create socket error %s\n", strerror(errno));
@@ -52,13 +72,13 @@ void net_loop(char** argv){
 
     int port = atoi(argv[3]);
     uint32_t address = (uint32_t)atol(argv[2]);
-
     struct in_addr sin_addr;
-    sin_addr.s_addr = htonl(address);
+    //sin_addr.s_addr = htonl(address);
     struct sockaddr_in inet_addr;
     inet_addr.sin_family = AF_INET;
     inet_addr.sin_port = port;
-    inet_addr.sin_addr = sin_addr;
+
+    inet_pton(AF_INET, argv[2], &inet_addr.sin_addr);
 
     if(connect(socket_desc, (struct sockaddr *)&inet_addr, sizeof(inet_addr)) == -1){
         printf("connect socket error %s\n", strerror(errno));
@@ -78,16 +98,14 @@ void receive_compute_send_loop(char** argv){
     sign[4] = '/';
     sprintf(buf, "%c%c%s", OP_SEND_NAME, (int)sizeof(argv[1]), argv[1]);
     fflush(stdout);
-    int a = write(socket_desc, (void *)buf, strlen(argv[1]) + 2);
-    // if(write(socket_desc, (void *)buf, strlen(argv[1]) + 2) == -1){
-    //     printf("Sending name err - %s\n", strerror(errno));
-    // }
+    if(write(socket_desc, (void *)buf, strlen(argv[1]) + 2) == -1) {
+        printf("Sending name err - %s\n", strerror(errno));
+    }
     fflush(stdout);
     while(1){
         free(buf);
         buf = (char*)calloc(NAME_SIZE_MAX, sizeof(char));
-        fflush(stdout);
-        if(read(socket_desc, buf, NAME_SIZE_MAX) == -1){
+        if(read(socket_desc, (void*)buf, NAME_SIZE_MAX) == -1){
             printf("Receive msg err - %s\n", strerror(errno));
         }
         if(buf[0] == OP_EXIT) {
@@ -100,7 +118,7 @@ void receive_compute_send_loop(char** argv){
         }
         if(buf[0] == OP_PING){
             printf("[PING]\n");
-            write(socket_desc, buf, 2);
+            write(socket_desc, (void*)buf, 1);
             continue;
         }
         //0 - operation// 1 - id // 2 - len1 // 3 - len2

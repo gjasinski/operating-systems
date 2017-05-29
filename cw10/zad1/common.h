@@ -1,5 +1,6 @@
 #ifndef ZAD1_COMMON_H
 #define ZAD1_COMMON_H
+#define _BSD_SOURCE
 
 #define UNIX_PATH_MAX 108
 #define CLIENTS_MAX 200
@@ -29,4 +30,5 @@
 #include <pthread.h>
 #include <sys/epoll.h>
 #include <fcntl.h>
+#include <arpa/inet.h>
 #endif //ZAD1_COMMON_H

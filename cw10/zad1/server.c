@@ -75,16 +75,12 @@ int main (int argc, char** argv)
     unix_clients = (struct sockaddr_un*)calloc(CLIENTS_MAX, sizeof(struct sockaddr_un));
 
     if(pthread_create(&thread_listener, NULL, &listen_socket, NULL) != 0 ||
-            pthread_create(&thread_pinger, NULL, &ping_clients, NULL) != 0){
+            pthread_create(&thread_pinger, NULL, &ping_clients, NULL) != 0) {
         printf("create thread error%s\n", strerror(errno));
         exit(-1);
     }
     int a, b,c;
-/*    struct sockaddr_in tmp;
-    socklen_t len = sizeof(tmp);
-    if(getsockname(desc_inet_socket, (struct sockaddr*)&tmp, &len) == -1)printf("err");
-    printf("port: %d add: %zu\n", tmp.sin_port, tmp.sin_addr);
-*/
+
     char* buf = (char*)calloc(NAME_SIZE_MAX, sizeof(char));
     int operation = 0;
     char tmp1[NAME_SIZE_MAX/2];
@@ -124,6 +120,7 @@ int main (int argc, char** argv)
 }
 
 void* listen_socket(void* useless){
+    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
     char* buf = (char*)calloc(NAME_SIZE_MAX, sizeof(char));
     int incoming_fd;
     if(listen(desc_unix_socket, CLIENTS_MAX) != 0 || listen(desc_inet_socket, EVENTS_MAX) != 0){
@@ -159,6 +156,9 @@ void* listen_socket(void* useless){
                     inet_connected_clients++;
                     event.data.fd = incoming_fd;
                     event.events = EPOLLIN | EPOLLOUT | EPOLLET;
+                    int flags = fcntl(incoming_fd, F_GETFL,0);
+                    flags |= O_NONBLOCK;
+                    fcntl(incoming_fd, F_SETFL, flags);
                     if (epoll_ctl(epoll_desc, EPOLL_CTL_ADD, incoming_fd, &event) == -1) {
                         printf("epoll_ctl err%s\n", strerror(errno));
                     }
@@ -220,6 +220,7 @@ void* listen_socket(void* useless){
                 //Print computed result
                 if(buf[0] > 0 && buf[0] < 6){
                     printf("[%d] %s\n", buf[1], buf + 3);
+                    continue;
                 }
 
                 //Remove client
@@ -227,12 +228,12 @@ void* listen_socket(void* useless){
                     int id_to_remove = 0;
                     while(clients_mask[id_to_remove] != events[i].data.fd){
                         id_to_remove++;
-                        printf("%d\n", id_to_remove);
                     }
                     printf("[REMOVE] %s %d\n", clients_list[id_to_remove], events[i].data.fd);
                     epoll_ctl(epoll_desc, EPOLL_CTL_DEL, events[i].data.fd, &event);
                     clients_mask[id_to_remove] = 0;
                     connected_clients--;
+                    continue;
                 }
 
                 if(buf[0] == OP_PING){
@@ -242,12 +243,13 @@ void* listen_socket(void* useless){
                             break;
                         }
                     }
+                    continue;
                 }
                 if(buf[0] == OP_FPE){
                     printf("[%d] DO NOT DIVIDE BY ZERO\n", buf[1]);
+                    continue;
                 }
             }
-            n = 0;
         }
         if(n == -1)break;//temporary, to calm clion ;)
     }
@@ -255,6 +257,7 @@ void* listen_socket(void* useless){
 }
 
 void* ping_clients(void* useless){
+    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
     char buf[2];
     buf[0] = OP_PING;
     buf[1] = 0;
@@ -263,7 +266,7 @@ void* ping_clients(void* useless){
         for(int i = 0; i < CLIENTS_MAX; i++){
             if(clients_mask[i] == 0) continue;
             clients_ping[i] = 1;
-            if(write(clients_mask[i], (void *)buf, 2) == 0){
+            if(write(clients_mask[i], (void *)buf, 1) == 0){
                 printf("[PING REMOVE ] %s %d\n", clients_list[i], clients_mask[i]);
                 epoll_ctl(epoll_desc, EPOLL_CTL_DEL, clients_mask[i], &event);
                 clients_mask[i] = 0;
@@ -272,7 +275,6 @@ void* ping_clients(void* useless){
             }
             sleep(1);
         }
-        sleep(5);
         for(int i = 0; i < CLIENTS_MAX; i++){
             if(clients_mask[i] != 0 && clients_ping[i] == 1){
                 printf("[PING REMOVE] %s %d\n", clients_list[i], clients_mask[i]);
