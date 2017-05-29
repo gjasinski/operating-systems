@@ -53,7 +53,12 @@ int main (int argc, char** argv)
         printf("bind socket error %s\n", strerror(errno));
         exit(-1);
     }
-
+    int flags = fcntl(desc_unix_socket, F_GETFL,0);
+    flags |= O_NONBLOCK;
+    fcntl(desc_unix_socket, F_SETFL, flags);
+    flags = fcntl(desc_inet_socket, F_GETFL,0);
+    flags |= O_NONBLOCK;
+    fcntl(desc_inet_socket, F_SETFL, flags);
     events = calloc(CLIENTS_MAX, sizeof(struct epoll_event));
     clients_list = (char**)calloc(CLIENTS_MAX, sizeof(char*));
     clients_mask = (int*)calloc(CLIENTS_MAX, sizeof(int));
@@ -87,6 +92,7 @@ int main (int argc, char** argv)
     sign[3] = '*';
     sign[4] = '/';
     printf("Type: a op b\n where op:\n 1 - +\n 2 - -\n 3 - *\n 4 - /\n");
+    int j = 0;
     while(1){
         if(operation == 'q') break;
         scanf("%d %d %d", &a, &b, &c);
@@ -95,13 +101,15 @@ int main (int argc, char** argv)
             continue;
         }
         int n = rand()%CLIENTS_MAX;
-        int j = 0;
+        printf("%d\n", n);
         for(int i = 0; i < n; i++){
+            j = (j+1)%CLIENTS_MAX;
             while(clients_mask[j] == 0){
                 j++;
                 j = j % CLIENTS_MAX;
             }
         }
+        printf("ala%d\n", j);
         sprintf(tmp1, "%d", a);
         sprintf(tmp2, "%d", c);
         sprintf(buf, "%c%c%c%c%d%c%d", b, operation %128, (int)strlen(tmp1), (int)strlen(tmp2), a, 0, c);
@@ -123,7 +131,7 @@ void* listen_socket(void* useless){
     }
     epoll_desc = epoll_create(1);
     event.data.fd = desc_inet_socket;
-    event.events = EPOLLIN | EPOLLOUT;
+    event.events = EPOLLIN | EPOLLOUT | EPOLLET;
     if (epoll_ctl(epoll_desc, EPOLL_CTL_ADD, desc_inet_socket, &event) == -1) {
         printf("epoll_ctl err%s\n", strerror(errno));
     }
@@ -165,7 +173,9 @@ void* listen_socket(void* useless){
                     unix_connected_clients += 1;
                     event.data.fd = incoming_fd;
                     event.events = EPOLLIN | EPOLLOUT | EPOLLET;
-
+                    int flags = fcntl(incoming_fd, F_GETFL,0);
+                    flags |= O_NONBLOCK;
+                    fcntl(incoming_fd, F_SETFL, flags);
                     if (epoll_ctl(epoll_desc, EPOLL_CTL_ADD, incoming_fd, &event) == -1) {
                         printf("epoll_ctl err%s\n", strerror(errno));
                     }
@@ -249,21 +259,20 @@ void* ping_clients(void* useless){
     buf[0] = OP_PING;
     buf[1] = 0;
     while(1){
-        pthread_mutex_lock(&synchronise_ping_and_receive);
+        //pthread_mutex_lock(&synchronise_ping_and_receive);
         for(int i = 0; i < CLIENTS_MAX; i++){
             if(clients_mask[i] == 0) continue;
             clients_ping[i] = 1;
             if(write(clients_mask[i], (void *)buf, 2) == 0){
-                printf("[PING REMOVE] %s %d\n", clients_list[i], clients_mask[i]);
+                printf("[PING REMOVE ] %s %d\n", clients_list[i], clients_mask[i]);
                 epoll_ctl(epoll_desc, EPOLL_CTL_DEL, clients_mask[i], &event);
                 clients_mask[i] = 0;
                 clients_list[i][0] = 0;
                 clients_ping[i] = 0;
             }
+            sleep(1);
         }
-        pthread_mutex_unlock(&synchronise_ping_and_receive);
-        sleep(2);
-        pthread_mutex_lock(&synchronise_ping_and_receive);
+        sleep(5);
         for(int i = 0; i < CLIENTS_MAX; i++){
             if(clients_mask[i] != 0 && clients_ping[i] == 1){
                 printf("[PING REMOVE] %s %d\n", clients_list[i], clients_mask[i]);
@@ -274,9 +283,7 @@ void* ping_clients(void* useless){
                 connected_clients--;
             }
         }
-        pthread_mutex_unlock(&synchronise_ping_and_receive);
-        sleep(2);
-        //break;
+
     }
     return NULL;
 }

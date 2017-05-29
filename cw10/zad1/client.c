@@ -79,16 +79,19 @@ void receive_compute_send_loop(char** argv){
     sign[3] = '*';
     sign[4] = '/';
     sprintf(buf, "%c%c%s", OP_SEND_NAME, (int)sizeof(argv[1]), argv[1]);
-    if(write(socket_desc, (void *)buf, strlen(argv[1]) + 2) == -1){
-        printf("Sending name err - %s\n", strerror(errno));
-    }
+    fflush(stdout);
+    int a = write(socket_desc, (void *)buf, strlen(argv[1]) + 2);
+    // if(write(socket_desc, (void *)buf, strlen(argv[1]) + 2) == -1){
+    //     printf("Sending name err - %s\n", strerror(errno));
+    // }
+    fflush(stdout);
     while(1){
         free(buf);
         buf = (char*)calloc(NAME_SIZE_MAX, sizeof(char));
-        printf("read %d\n", read(socket_desc, buf, NAME_SIZE_MAX));
-        /*if(read(socket_desc, buf, NAME_SIZE_MAX) == -1){
+        fflush(stdout);
+        if(read(socket_desc, buf, NAME_SIZE_MAX) == -1){
             printf("Receive msg err - %s\n", strerror(errno));
-        }*/
+        }
         if(buf[0] == OP_EXIT) {
             printf("[EXIT] Terminating client\n");
             break;
@@ -124,7 +127,7 @@ void receive_compute_send_loop(char** argv){
             continue;
         }
         else{
-            printf("[%d] %d %c %d = %ld", buf[1], a, sign[buf[0]], b, result);
+            printf("[%d] %d %c %d = %ld\n", buf[1], a, sign[buf[0]], b, result);
         }
         buf[0] = OP_RES;
         sprintf(buf + 3, "%ld", result);
