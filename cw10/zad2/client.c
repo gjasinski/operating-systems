@@ -66,7 +66,7 @@ void net_loop(char** argv){
     inet_addr.sin_port = port;
 
     inet_pton(AF_INET, argv[2], &inet_addr.sin_addr);
-
+    printf("%d\n", inet_addr.sin_addr);
     if(connect(socket_desc, (struct sockaddr *)&inet_addr, sizeof(inet_addr)) == -1){
         printf("connect socket error %s\n", strerror(errno));
         exit(-1);

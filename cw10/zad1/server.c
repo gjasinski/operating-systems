@@ -45,7 +45,7 @@ int main (int argc, char** argv)
     inet_addr.sin_family = AF_INET;
     inet_addr.sin_port = port;
     inet_addr.sin_addr = sin_addr;
-
+printf("%d\n", sin:q
     struct sockaddr_un unix_addr;
     unix_addr.sun_family = AF_UNIX;
     memcpy(unix_addr.sun_path, argv[2], sizeof(argv[2]));
