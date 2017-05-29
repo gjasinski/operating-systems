@@ -64,8 +64,6 @@ void net_loop(char** argv){
         printf("connect socket error %s\n", strerror(errno));
         exit(-1);
     }
-    getc(stdin);
-    printf("ALA MA KOTA");
     fflush(stdout);
     receive_compute_send_loop(argv);
 }

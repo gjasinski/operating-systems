@@ -12,6 +12,7 @@ int epoll_desc;
 struct epoll_event* events;
 struct epoll_event event;
 pthread_mutex_t synchronise_ping_and_receive;
+char* unix_name;
 
 void clear_and_exit(int n);
 
@@ -25,6 +26,8 @@ int main (int argc, char** argv)
         printf("./main port socket_path");
         exit(-1);
     }
+    unix_name = (char*)calloc(strlen(argv[2]), sizeof(char));
+    strcpy(unix_name, argv[2]);
     signal(SIGINT, &clear_and_exit);
     srand(time(NULL));
     int port = atoi(argv[1]);
@@ -77,11 +80,11 @@ int main (int argc, char** argv)
         exit(-1);
     }
     int a, b,c;
-    struct sockaddr_in tmp;
+/*    struct sockaddr_in tmp;
     socklen_t len = sizeof(tmp);
     if(getsockname(desc_inet_socket, (struct sockaddr*)&tmp, &len) == -1)printf("err");
     printf("port: %d add: %zu\n", tmp.sin_port, tmp.sin_addr);
-
+*/
     char* buf = (char*)calloc(NAME_SIZE_MAX, sizeof(char));
     int operation = 0;
     char tmp1[NAME_SIZE_MAX/2];
@@ -101,15 +104,13 @@ int main (int argc, char** argv)
             continue;
         }
         int n = rand()%CLIENTS_MAX;
-        printf("%d\n", n);
-        for(int i = 0; i < n; i++){
+        for(int i = 0; i < n/2 + 1; i++){
             j = (j+1)%CLIENTS_MAX;
             while(clients_mask[j] == 0){
                 j++;
                 j = j % CLIENTS_MAX;
             }
         }
-        printf("ala%d\n", j);
         sprintf(tmp1, "%d", a);
         sprintf(tmp2, "%d", c);
         sprintf(buf, "%c%c%c%c%d%c%d", b, operation %128, (int)strlen(tmp1), (int)strlen(tmp2), a, 0, c);
@@ -161,7 +162,6 @@ void* listen_socket(void* useless){
                     if (epoll_ctl(epoll_desc, EPOLL_CTL_ADD, incoming_fd, &event) == -1) {
                         printf("epoll_ctl err%s\n", strerror(errno));
                     }
-                    printf("conntected inet\n");
                 }
             }
                 //add local client
@@ -307,7 +307,7 @@ void clear_and_exit(int n){
     close(desc_unix_socket);
     pthread_join(thread_listener, NULL);
     pthread_join(thread_pinger, NULL);
+    unlink(unix_name);
+    free(unix_name);
     exit(0);
 }
-
-//todo: synchronisation, client countere
