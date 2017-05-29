@@ -66,7 +66,6 @@ void net_loop(char** argv){
     inet_addr.sin_port = port;
 
     inet_pton(AF_INET, argv[2], &inet_addr.sin_addr);
-    printf("%d\n", inet_addr.sin_addr);
     if(connect(socket_desc, (struct sockaddr *)&inet_addr, sizeof(inet_addr)) == -1){
         printf("connect socket error %s\n", strerror(errno));
         exit(-1);
@@ -83,11 +82,9 @@ void receive_compute_send_loop(char** argv){
     sign[3] = '*';
     sign[4] = '/';
     sprintf(buf, "%c%c%s", OP_SEND_NAME, (int)sizeof(argv[1]), argv[1]);
-    fflush(stdout);
     if(write(socket_desc, (void *)buf, strlen(argv[1]) + 2) == -1) {
         printf("Sending name err - %s\n", strerror(errno));
     }
-    fflush(stdout);
     while(1){
         free(buf);
         buf = (char*)calloc(NAME_SIZE_MAX, sizeof(char));

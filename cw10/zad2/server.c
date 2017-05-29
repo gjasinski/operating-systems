@@ -33,7 +33,7 @@ int main (int argc, char** argv){
     int port = atoi(argv[1]);
     connected_clients = 0;
     desc_unix_socket = socket(AF_UNIX, SOCK_DGRAM | SOCK_NONBLOCK, 0);
-    desc_inet_socket = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+    desc_inet_socket = socket(AF_INET, SOCK_DGRAM | SOCK_NONBLOCK, 0);
     if(desc_inet_socket == -1 || desc_unix_socket == -1) {
         printf("create socket error %s\n", strerror(errno));
         exit(-1);
@@ -45,7 +45,6 @@ int main (int argc, char** argv){
     inet_addr.sin_port = port;
     inet_addr.sin_addr = sin_addr;
 
-    printf("%d\n", sin_addr.s_addr);
     struct sockaddr_un unix_addr;
     unix_addr.sun_family = AF_UNIX;
     memcpy(unix_addr.sun_path, argv[2], sizeof(argv[2]));
@@ -218,7 +217,6 @@ void* listen_socket(void* useless){
                 printf("[%d] DO NOT DIVIDE BY ZERO\n", buf[1]);
                 continue;
             }
-            printf("UNKNOWN");
 
         }
         if(n == -1)break;//temporary, to calm clion ;)
