@@ -88,10 +88,10 @@ void client_loop(){
         if(cuts == 0) exit(0);
         get_semaphore(sem_queue, SEM_WAIT);
         if(get_semaphore(sem_barber, IPC_NOWAIT) != -1){
+            print_info("waking barber", getpid());
             shm_memory_q[SHM_WAKING_CLIENT] = getpid();
             release_semaphore(sem_barber_sleeping);
             release_semaphore(sem_queue);
-            print_info("waking barber", getpid());
             get_semaphore(sem_barber_cutting, SEM_WAIT);
             print_info("client left barber after cutting", getpid());
             cuts--;
@@ -107,7 +107,7 @@ void client_loop(){
                 shm_memory_q[SHM_QUEUE_END]++;
                 release_semaphore(sem_queue);
                 print_info("sit in waiting room", getpid());
-              
+
                 get_semaphore(waiting_room[tmp], SEM_WAIT);
                 print_info("client left barber after cutting", getpid());
                 cuts--;
