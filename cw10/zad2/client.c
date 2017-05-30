@@ -1,5 +1,5 @@
 #include "common.h"
-int socket_desc;
+int socket_desc, id;
 char* unix_name;
 
 void local_loop(char** argv);
@@ -35,7 +35,7 @@ void local_loop(char** argv){
         printf("create socket error %s\n", strerror(errno));
         exit(-1);
     }
-    unlink(unix_name);
+
     struct sockaddr_un unix_addr;
     unix_addr.sun_family = AF_UNIX;
     memcpy(unix_addr.sun_path, argv[1], sizeof(argv[1]));
@@ -101,7 +101,13 @@ void receive_compute_send_loop(char** argv){
         }
         if(buf[0] == OP_PING){
             printf("[PING]\n");
-            write(socket_desc, (void*)buf, 1);
+            buf[1] = id;
+            write(socket_desc, (void*)buf, 2);
+            continue;
+        }
+        if(buf[0] == OP_ID){
+            printf("ID %d\n", buf[1]);
+            id = buf[1];
             continue;
         }
         //0 - operation// 1 - id // 2 - len1 // 3 - len2
@@ -142,21 +148,16 @@ void receive_compute_send_loop(char** argv){
     if(close(socket_desc) == -1){
         printf("Close err - %s\n", strerror(errno));
     }
+    clear_and_exit(200);
 }
 void clear_and_exit(int n){
     char buf[2];
     buf[0] = OP_EXIT;
-    buf[1] = 0;
-    if(write(socket_desc, (void*)buf, 2) == -1){
-        printf("Send exit_info err - %s\n", strerror(errno));
-    }
+    buf[1] = id;
+    write(socket_desc, (void*)buf, 2);
     unlink(unix_name);
     free(unix_name);
-    if(shutdown(socket_desc, SHUT_RDWR) == -1){
-        printf("Shutdown err - %s\n", strerror(errno));
-    }
-    if(close(socket_desc) == -1){
-        printf("Close err - %s\n", strerror(errno));
-    }
+    shutdown(socket_desc, SHUT_RDWR);
+    close(socket_desc);
     exit(0);
 }

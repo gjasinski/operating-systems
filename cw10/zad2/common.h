@@ -3,7 +3,7 @@
 #define _DEFAULT_SOURCE
 
 #define UNIX_PATH_MAX 108
-#define CLIENTS_MAX 200
+#define CLIENTS_MAX 128
 #define EVENTS_MAX 20
 #define NAME_SIZE_MAX 128
 #define OP_SEND_NAME 11 //client -> server
@@ -16,6 +16,7 @@
 #define OP_REJECT 7 //server -> client
 #define OP_PING 8
 #define OP_FPE 9
+#define OP_ID 12
 
 #include <stdlib.h>
 #include <stdio.h>

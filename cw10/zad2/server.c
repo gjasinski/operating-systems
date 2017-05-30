@@ -1,11 +1,7 @@
 #include "common.h"
 
-int desc_unix_socket, desc_inet_socket, inet_connected_clients, unix_connected_clients, connected_clients;
+int desc_unix_socket, desc_inet_socket, connected_clients;
 pthread_t thread_listener, thread_pinger;
-struct sockaddr_in* inet_clients;
-struct sockaddr_un* unix_clients;
-socklen_t inet_len = sizeof(struct sockaddr_in);
-socklen_t unix_len = sizeof(struct sockaddr_un);
 char** clients_list;
 int* clients_ping, * clients_mask;
 unsigned int *clients_addrlen;
@@ -14,6 +10,7 @@ struct epoll_event* events;
 struct epoll_event event;
 char* unix_name;
 struct sockaddr** clients_dest_addr;
+pthread_mutex_t mutex;
 
 void clear_and_exit(int i);
 
@@ -29,6 +26,8 @@ int main (int argc, char** argv){
     unix_name = (char*)calloc(strlen(argv[2]), sizeof(char));
     strcpy(unix_name, argv[2]);
     signal(SIGINT, &clear_and_exit);
+    mutex = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+
     srand(time(NULL));
     int port = atoi(argv[1]);
     connected_clients = 0;
@@ -72,9 +71,6 @@ int main (int argc, char** argv){
         clients_addrlen[i] = clients_mask[i] = 0;
         clients_list[i] = (char*)calloc(NAME_SIZE_MAX, sizeof(char));
     }
-    inet_connected_clients = unix_connected_clients = 0;
-    inet_clients = (struct sockaddr_in*)calloc(CLIENTS_MAX, sizeof(struct sockaddr_in));
-    unix_clients = (struct sockaddr_un*)calloc(CLIENTS_MAX, sizeof(struct sockaddr_un));
 
     if(pthread_create(&thread_listener, NULL, &listen_socket, NULL) != 0 ||
        pthread_create(&thread_pinger, NULL, &ping_clients, NULL) != 0) {
@@ -153,6 +149,7 @@ void* listen_socket(void* useless){
             if (recvfrom(events[i].data.fd, buf, NAME_SIZE_MAX, 0, src_addr, &addrlen) == 0) continue;
             //Register client - check if name is not used
             if (buf[0] == OP_SEND_NAME) {
+                pthread_mutex_lock(&mutex);
                 int name_taken = 0;
                 int free_slot = -1;
                 for (int j = 0; j < CLIENTS_MAX && name_taken == 0; j++) {
@@ -167,20 +164,24 @@ void* listen_socket(void* useless){
                 if (name_taken == 1 || free_slot == -1) {
                     buf[0] = OP_REJECT;
                     buf[1] = 0;
-                    if (write(events[i].data.fd, (void *) buf, 2) == -1) {
+                    if (sendto(events[i].data.fd, (void *) buf, 2, 0, src_addr, addrlen) == -1) {
                         printf("Write error %s\n", strerror(errno));
                     }
-                    printf("[REJECT REGISTER] %s %d\n", buf + 2, events[i].data.fd);
-                    epoll_ctl(epoll_desc, EPOLL_CTL_DEL, events[i].data.fd, &event);
+                    pthread_mutex_unlock(&mutex);
+                    continue;
                 } else {
                     sprintf(clients_list[free_slot], "%s", buf + 2);
                     clients_mask[free_slot] = events[i].data.fd;
                     clients_dest_addr[free_slot] = src_addr;
                     clients_addrlen[free_slot] = addrlen;
-                    printf("[REGISTER] %s %d\n", buf + 2, events[i].data.fd);
+                    printf("[REGISTER] %s %d\n", buf + 2, free_slot);
                     connected_clients++;
+                    buf[0] = OP_ID;
+                    buf[1] = free_slot;
+                    sendto(events[i].data.fd, (void *) buf, 2, 0, src_addr, addrlen);
+                    pthread_mutex_unlock(&mutex);
+                    continue;
                 }
-                continue;
             }
 
             //Print computed result
@@ -191,10 +192,7 @@ void* listen_socket(void* useless){
 
             //Remove client
             if (buf[0] == OP_EXIT) {
-                int id_to_remove = 0;
-                while (clients_mask[id_to_remove] != events[i].data.fd) {
-                    id_to_remove++;
-                }
+                int id_to_remove = buf[1];
                 printf("[REMOVE] %s %d\n", clients_list[id_to_remove], events[i].data.fd);
                 clients_mask[id_to_remove] = 0;
                 clients_addrlen[id_to_remove] = 0;
@@ -205,12 +203,7 @@ void* listen_socket(void* useless){
             }
 
             if (buf[0] == OP_PING) {
-                for (int j = 0; j < CLIENTS_MAX; j++) {
-                    if (clients_mask[j] == events[i].data.fd) {
-                        clients_ping[j] = 0;
-                        break;
-                    }
-                }
+                clients_ping[buf[1]] = 0;
                 continue;
             }
             if (buf[0] == OP_FPE) {
@@ -225,36 +218,39 @@ void* listen_socket(void* useless){
 }
 
 void* ping_clients(void* useless){
-   /* pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
+    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
     char buf[2];
     buf[0] = OP_PING;
     buf[1] = 0;
     while(1){
+        pthread_mutex_lock(&mutex);
         for(int i = 0; i < CLIENTS_MAX; i++){
-            if(clients_mask[i] == 0) continue;
-            clients_ping[i] = 1;
-            if(write(clients_mask[i], (void *)buf, 1) == 0){
-                printf("[PING REMOVE ] %s %d\n", clients_list[i], clients_mask[i]);
-                epoll_ctl(epoll_desc, EPOLL_CTL_DEL, clients_mask[i], &event);
-                clients_mask[i] = 0;
-                clients_list[i][0] = 0;
-                clients_ping[i] = 0;
-            }
-            sleep(1);
-        }
-        for(int i = 0; i < CLIENTS_MAX; i++){
-            if(clients_mask[i] != 0 && clients_ping[i] == 1){
+            if(clients_addrlen[i] == 0) continue;
+            clients_ping[i] ++;
+            if(clients_ping[i] > 5){
                 printf("[PING REMOVE] %s %d\n", clients_list[i], clients_mask[i]);
-                epoll_ctl(epoll_desc, EPOLL_CTL_DEL, clients_mask[i], &event);
                 clients_mask[i] = 0;
-                clients_list[i][0] = 0;
+                clients_addrlen[i] = 0;
                 clients_ping[i] = 0;
+                free(clients_dest_addr[i]);
                 connected_clients--;
+                continue;
             }
-        }
+            if(sendto(clients_mask[i], (void*)buf, 1, 0, clients_dest_addr[i], clients_addrlen[i]) == -1){
+                printf("[PING REMOVE SENDING ERR] %s %s\n", clients_list[i], strerror(errno));
+                clients_mask[i] = 0;
+                clients_addrlen[i] = 0;
+                clients_ping[i] = 0;
+                free(clients_dest_addr[i]);
+                connected_clients--;
+                usleep(10);
+            }
 
+        }
+        pthread_mutex_unlock(&mutex);
+        sleep(2);
     }
-    return NULL;*/
+    return NULL;
 }
 
 void clear_and_exit(int n){
