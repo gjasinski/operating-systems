@@ -45,7 +45,7 @@ int main (int argc, char** argv)
     inet_addr.sin_family = AF_INET;
     inet_addr.sin_port = port;
     inet_addr.sin_addr = sin_addr;
-printf("%d\n", sin:q
+
     struct sockaddr_un unix_addr;
     unix_addr.sun_family = AF_UNIX;
     memcpy(unix_addr.sun_path, argv[2], sizeof(argv[2]));
@@ -113,7 +113,7 @@ printf("%d\n", sin:q
         if(write(clients_mask[j], (void*)buf, strlen(tmp1) + strlen(tmp2) + 5) == -1){
             printf("Send request err - %s\n", strerror(errno));
         };
-        printf("[REQUEST SERVICE %d] %d %c %d for %d\n", operation, a, sign[b], c, clients_mask[j]);
+        printf("[REQUEST SERVICE %d] %d %c %d for %s\n", operation, a, sign[b], c, clients_list[j]);
         operation++;
     }
 

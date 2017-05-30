@@ -44,39 +44,16 @@ void local_loop(char** argv){
 }
 
 void net_loop(char** argv){
-    /*char address[108];
-
-    strcpy(address, strsep(&argv[3], ":"));
-    port = (short)atoi(argv[3]);
-    struct sockaddr_in* stSockAddr = malloc(sizeof(struct sockaddr_in));
-    SocketFD = socket(PF_INET, SOCK_DGRAM, 0);
-
-    if (-1 == SocketFD) {
-        perror("cannot create socket");
-        exit(EXIT_FAILURE);
-    }
-
-    memset(stSockAddr, 0, sizeof(*stSockAddr));
-
-    stSockAddr->sin_family = AF_INET;
-    stSockAddr->sin_port = htons(port);
-    assert(inet_pton(AF_INET, address, &stSockAddr->sin_addr) > 0);
-
-    srv_name = (struct sockaddr *)stSockAddr;
-    */
     socket_desc = socket(AF_INET, SOCK_STREAM, 0);
     if(socket_desc == -1) {
         printf("create socket error %s\n", strerror(errno));
         exit(-1);
     }
 
-    int port = atoi(argv[3]);
-    uint32_t address = (uint32_t)atol(argv[2]);
     struct in_addr sin_addr;
-    //sin_addr.s_addr = htonl(address);
     struct sockaddr_in inet_addr;
     inet_addr.sin_family = AF_INET;
-    inet_addr.sin_port = port;
+    inet_addr.sin_port = atoi(argv[3]);
 
     inet_pton(AF_INET, argv[2], &inet_addr.sin_addr);
 
@@ -139,7 +116,7 @@ void receive_compute_send_loop(char** argv){
             result = a / b;
         }
         if(result == -1) {
-            printf("[UNKNOWN] Client error unknown msg_id - %d - ignoring\n", buf[0]);
+            //printf("[UNKNOWN] Client error unknown msg_id - %d - ignoring\n", buf[0]);
             continue;
         }
         else{
