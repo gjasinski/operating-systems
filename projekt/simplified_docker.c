@@ -9,9 +9,12 @@
 #include <sys/mount.h>
 #include <errno.h>
 #include <string.h>
+#include <dirent.h>
+#include <string.h>
+#include <unistd.h>
 
 static char child_stack[1048576];
-
+void search_dir(char* path, int max_size);
 static int child_fn() {
   printf("Creating new namespaces:\nStarting init process\n");
   /*printf("pid %d\n", getpid());
@@ -26,10 +29,18 @@ static int child_fn() {
   //getcwd(absolute_path, 255);
   //printf("Cwd %s\n", absolute_path);
   */
+
   if(mount("/", "/", "ext4", MS_SLAVE, NULL) != 0) printf("err1\n%s\n", strerror(errno));
-  if(mount("/dev/sda", "/vm", "ext4" , 0, NULL) != 0) printf("err2\n%s\n", strerror(errno));
   if(mount("/dev/sda1", "/vm", "ext4" , 0, NULL) != 0) printf("err2\n%s\n", strerror(errno));
+  search_dir("/vm", 255);
+//  if(mount("/dev/sda1", "/vm", "ext4" , 0, NULL) != 0) printf("err2\n%s\n", strerror(errno));
   //mkdir("/vm/alamakota", 0777);
+  chdir("/vm");	
+char buf[250];
+getcwd(buf,250);
+printf("cwd: %s\n", buf);
+printf("pid: %d\n", getpid());
+  execl("/vm/sbin/init", "/vm/sbin/init 3", NULL);
   return 0;
 }
 
@@ -56,4 +67,39 @@ int main(int argc, char** argv){
   waitpid(child_pid, NULL, 0);
   return 0;
 }
+
+void search_dir(char* path, int max_size){
+    char file_path[255];
+    struct stat* stat_buf = (struct stat*)calloc(1, sizeof(struct stat));
+    DIR* curr_dir = opendir(path);
+    if(curr_dir == NULL){
+        printf("search_dir - error %s\n", path);
+        exit(1);
+    }
+    struct dirent* file;
+    file = readdir(curr_dir);
+    while(file != NULL){
+        if(strcmp(file->d_name, ".") == 0 || strcmp(file->d_name, "..") == 0){
+            file = readdir(curr_dir);
+            continue;
+        }
+        strcpy(file_path, path);
+        strcat(file_path, "/");
+        strcat(file_path, file->d_name);
+        if(stat(file_path, stat_buf) < 0) {
+            printf("search_dir - stat - error %s\n", path);
+            exit(1);
+        }
+
+        printf("%s\n", file_path);
+        file = readdir(curr_dir);
+    }
+
+
+    if(closedir(curr_dir) == -1){
+        printf("search_dir - stat - error %s\n", path);
+        exit(1);
+    }
+}
+
 
