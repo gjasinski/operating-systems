@@ -14,93 +14,57 @@
 #include <unistd.h>
 
 static char child_stack[10485760];
-void search_dir(char* path, int max_size);
-static int child_fn() {
-  printf("Creating new namespaces:\nStarting init process\n");
+char** argv_global;
 
-  if(mount("/", "/", "ext4", MS_PRIVATE, NULL) != 0) printf("err1\n%s\n", strerror(errno));
+static int child_fn() {
+  if(mount("/", "/", "ext4", MS_PRIVATE, NULL) != 0) printf("err0\n%s\n", strerror(errno));
   if(mount("/", "/proc", "ext4", MS_PRIVATE, NULL) != 0) printf("err1\n%s\n", strerror(errno));
-  if(mount("/", "/dev", "ext4", MS_PRIVATE, NULL) != 0) printf("err1\n%s\n", strerror(errno));
-  if(mount("/", "/sys", "ext4", MS_PRIVATE, NULL) != 0) printf("err1\n%s\n", strerror(errno));
-  if(mount("/", "/dev/pts", "ext4", MS_PRIVATE, NULL) != 0) printf("err1\n%s\n", strerror(errno));
-  if(mount("/", "/dev/shm", "ext4", MS_PRIVATE, NULL) != 0) printf("err1\n%s\n", strerror(errno));
-  if(mount("/", "/dev/hugepages", "ext4", MS_PRIVATE, NULL) != 0) printf("err1\n%s\n", strerror(errno));
-  if(mount("/", "/dev/mqueue", "ext4", MS_PRIVATE, NULL) != 0) printf("err1\n%s\n", strerror(errno));
-  if(mount("/", "/run", "ext4", MS_PRIVATE, NULL) != 0) printf("err1\n%s\n", strerror(errno));
-  if(mount("/", "/usr", "ext4", MS_PRIVATE, NULL) != 0) printf("err1\n%s\n", strerror(errno));
-//  if(mount("/", "/etc", "ext4", MS_PRIVATE, NULL) != 0) printf("err1\n%s\n", strerror(errno));
-  //if(mount("/", "/sys/kernel/security", "ext4", MS_PRIVATE, NULL) != 0) printf("err1\n%s\n", strerror(errno));
-//  if(mount("/", "/sys/kernel/debug", "ext4", MS_PRIVATE, NULL) != 0) printf("err1\n%s\n", strerror(errno));
- // if(mount("/", "/run/lock", "ext4", MS_PRIVATE, NULL) != 0) printf("err1\n%s\n", strerror(errno));
-  //if(mount("/dev/sda1", "/vm", "ext4", 0, NULL) == -1) printf("err mount /%s\n", strerror(errno));
-umount("/dev/pts");
+  if(mount("/", "/dev", "ext4", MS_PRIVATE, NULL) != 0) printf("err2\n%s\n", strerror(errno));
+  if(mount("/", "/sys", "ext4", MS_PRIVATE, NULL) != 0) printf("err3\n%s\n", strerror(errno));
+  if(mount("/", "/dev/pts", "ext4", MS_PRIVATE, NULL) != 0) printf("err4\n%s\n", strerror(errno));
+  if(mount("/", "/dev/shm", "ext4", MS_PRIVATE, NULL) != 0) printf("err5\n%s\n", strerror(errno));
+  //if(mount("/", "/dev/hugepages", "ext4", MS_PRIVATE, NULL) != 0) printf("err6\n%s\n", strerror(errno));
+  //if(mount("/", "/dev/mqueue", "ext4", MS_PRIVATE, NULL) != 0) printf("err7\n%s\n", strerror(errno));
+  if(mount("/", "/run", "ext4", MS_PRIVATE, NULL) != 0) printf("err8\n%s\n", strerror(errno));
+ // if(mount("/", "/usr", "ext4", MS_PRIVATE, NULL) != 0) printf("err9\n%s\n", strerror(errno));
+
+  umount("/dev/pts");
   umount("/dev/shm");
   umount("/dev/mqueue");
   umount("/dev/hugepages");
-if(umount("/dev")!= 0) printf("errrrrrr");
-  //if(mount("/vm", "/", "ext4", MS_REMOUNT, NULL) == -1) printf("err mount dev/mque %s\n", strerror(errno));
-  if(mount("/vm/dev", "/dev", "devtmpfs", MS_NOSUID, NULL) == -1) printf("err mount dev %s\n", strerror(errno));
-if(mount("/vm/proc", "/proc", "proc", MS_NOSUID | MS_NODEV | MS_NOEXEC, NULL) == -1) printf("err mount proc %s\n", strerror(errno));
-  if(mount("/vm/sys", "/sys", "sysfs", MS_NOSUID | MS_NODEV | MS_NOEXEC, NULL) == -1) printf("err mount sys %s\n", strerror(errno));
+  umount("/dev");
 
+  mkdir("/vm", 0777);
+  mkdir("/vm/proc", 0777);
+//  if(mount("/vm/dev", "/dev", "devtmpfs", MS_NOSUID, NULL) == -1) printf("err mount dev %s\n", strerror(errno));
+  if(mount("/vm/proc", "/proc", "proc", MS_NOSUID | MS_NODEV | MS_NOEXEC, NULL) == -1) printf("err mount proc %s\n", strerror(errno));
+  if(mount("/vm/sys", "/sys", "sysfs", MS_NOSUID | MS_NODEV | MS_NOEXEC, NULL) == -1) printf("err mount sys %s\n", strerror(errno));
   if(mount("/vm/dev/pts", "/dev/pts", "devpts", MS_NOSUID | MS_NOEXEC, NULL) == -1) printf("err mount dev/pts %s\n", strerror(errno));
   if(mount("/vm/dev/shm", "/dev/shm", "tmpfs", MS_NOSUID | MS_NOEXEC, NULL) == -1) printf("err mount dev/dhm %s\n", strerror(errno));
-  if(mount("/vm/dev/hugepages", "/dev/hugepages", "hugetlbfs", 0, NULL) == -1) printf("err mount dev/hugr %s\n", strerror(errno));
-  if(mount("/vm/dev/mqueue", "/dev/mqueue", "mqueue", 0, NULL) == -1) printf("err mount dev/mque %s\n", strerror(errno));
+  //if(mount("/vm/dev/hugepages", "/dev/hugepages", "hugetlbfs", 0, NULL) == -1) printf("err mount dev/hugepages %s\n", strerror(errno));
+  //if(mount("/vm/dev/mqueue", "/dev/mqueue", "mqueue", 0, NULL) == -1) printf("err mount dev/mqueue %s\n", strerror(errno));
   if(mount("/vm/run", "/run", "tmpfs", 0, NULL) == -1) printf("err mount dev/mque %s\n", strerror(errno));
-  //if(mount("/vm/usr", "/usr", "tmpfs", 0, NULL) == -1) printf("err mount dev/mque %s\n", strerror(errno));
-//if(mount("/vm/etc", "/etc", "tmpfs", 0, NULL) == -1) printf("err mount dev/mque %s\n", strerror(errno));
- // if(mount("/vm/sys/kernel/security", "/sys/kernel/security", "ext4", MS_PRIVATE, NULL) != 0) printf("err1\n%s\n", strerror(errno));
-//  if(mount("/vm/sys/kernel/debug", "/sys/kernel/debug", "debugfs", 0, NULL) != 0) printf("err1\n%s\n", strerror(errno));
-//  if(mount("/vm/etc/run/lock", "/run/lock", "ext4", MS_PRIVATE, NULL) != 0) printf("err1\n%s\n", strerror(errno));
 
-  /*if(mount("/vm", "/dev/sda", "ext4", 0, NULL) == -1) printf("err mount dev/mque %s\n", strerror(errno));*/
+  sethostname(argv_global[1], strlen(argv_global[1]));
 
- /* if(mount("/", "/dev/pts", "ext4", MS_SLAVE, NULL) != 0) printf("err1\n%s\n", strerror(errno));
-  if(mount("/", "/dev/shm", "ext4", MS_SLAVE, NULL) != 0) printf("err1\n%s\n", strerror(errno));
-  if(mount("/", "/dev/hugepages", "ext4", MS_SLAVE, NULL) != 0) printf("err1\n%s\n", strerror(errno));
-  if(mount("/", "/dev/mqueue", "ext4", MS_SLAVE, NULL) != 0) printf("err1\n%s\n", strerror(errno));
-  if(mount("/", "/dev", "ext4", MS_SLAVE, NULL) != 0) printf("err1\n%s\n", strerror(errno));
-//  if(mount("/dev/sda1/vm", "/", "ext4", 0, NULL) == -1) printf("err umount vm %s\n", strerror(errno));
-*/
-  
-//if(umount("/dev") != 0) printf("err");
-  chdir("/vm");	
-char buf[250];
-getcwd(buf,250);
-printf("cwd: %s\n", buf);
-printf("pid: %d\n", getpid());
-//execlp("less", "less", "/proc/self/mountinfo", NULL);
-//execlp("ls", "ls", "/", NULL);
-execlp("/sbin/init", "init", "2", NULL);
-//execlp("/bin/sh", "sh", NULL);
+
+  //execlp("/sbin/init", "init", "2", NULL);
+  execlp("/bin/bash", "shell", NULL);
   return 0;
 }
 
 int main(int argc, char** argv){
-  if(argc != 2 && argc != 3){
-    printf("./simplified_docker system_path \n./simplified_docker system_path pid_1_path\n");
+  if(argc != 2){
+    printf("./simplified_docker hostname\n");
+    return 0;
   }
-
-  char* pid_1_path = "/sbin/init";
-  if (argc == 3){
-    pid_1_path = argv[2];
-  }
-  /*if(mount("", "/proc", "", MS_SHARED, NULL) != 0) printf("err0\n%s\n", strerror(errno));
-  if(mount("", "/sys", "", MS_SHARED, NULL) != 0) printf("err0\n%s\n", strerror(errno));
-  if(mount("", "/dev", "", MS_SHARED, NULL) != 0) printf("err0\n%s\n", strerror(errno));
-
-  if(mount("", "/dev/pts", "", MS_SHARED, NULL) != 0) printf("err1\n%s\n", strerror(errno));
-  if(mount("", "/dev/shm", "", MS_SHARED, NULL) != 0) printf("err1\n%s\n", strerror(errno));
-  if(mount("", "/dev/hugepages", "", MS_SHARED, NULL) != 0) printf("err1\n%s\n", strerror(errno));
-  if(mount("", "/dev/mqueue", "", MS_SHARED, NULL) != 0) printf("err1\n%s\n", strerror(errno));
-*/
+  argv_global = argv;
   pid_t child_pid = clone(child_fn, child_stack+10485760, CLONE_NEWPID | CLONE_NEWNET | CLONE_NEWUTS |
                           CLONE_NEWIPC | CLONE_NEWNS | SIGCHLD, NULL);
   /*
     CLONE_NEWPID - create the process in a new PID namespace
     CLONE_NEWNET - create the process in a new network namespace.
-    CLONE_NEWNS -  then create the process in a new network namespace. 
+    CLONE_NEWNS -  then create the process in a new network namespace.
     CLONE_NEWUTS - then create the process in a new UTS namespace, whose identifiers are initialized by duplicating the identifiers from the UTS namespace of the calling process. 
     CLONE_NEWIPC -  then create the process in a new IPC namespace.
   */
@@ -108,41 +72,3 @@ int main(int argc, char** argv){
   waitpid(child_pid, NULL, 0);
   return 0;
 }
-
-void search_dir(char* path, int max_size){
-    char file_path[255];
-    struct stat* stat_buf = (struct stat*)calloc(1, sizeof(struct stat));
-    DIR* curr_dir = opendir(path);
-    if(curr_dir == NULL){
-       // printf("search_dir - error %s\n", path);
-//        exit(1);
-return;
-    }
-    struct dirent* file;
-    file = readdir(curr_dir);
-    while(file != NULL){
-        if(strcmp(file->d_name, ".") == 0 || strcmp(file->d_name, "..") == 0){
-            file = readdir(curr_dir);
-            continue;
-        }
-        strcpy(file_path, path);
-        strcat(file_path, "/");
-        strcat(file_path, file->d_name);
-        if(stat(file_path, stat_buf) < 0) {
-            printf("search_dir - stat - error %s\n", path);
-            exit(1);
-        }
-
-        printf("%s\n", file_path);
-	search_dir(file_path,255);
-        file = readdir(curr_dir);
-    }
-
-
-    if(closedir(curr_dir) == -1){
-        printf("search_dir - stat - error %s\n", path);
-        exit(1);
-    }
-}
-
-
