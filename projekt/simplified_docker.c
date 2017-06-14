@@ -23,10 +23,7 @@ static int child_fn() {
   if(mount("/", "/sys", "ext4", MS_PRIVATE, NULL) != 0) printf("err3\n%s\n", strerror(errno));
   if(mount("/", "/dev/pts", "ext4", MS_PRIVATE, NULL) != 0) printf("err4\n%s\n", strerror(errno));
   if(mount("/", "/dev/shm", "ext4", MS_PRIVATE, NULL) != 0) printf("err5\n%s\n", strerror(errno));
-  //if(mount("/", "/dev/hugepages", "ext4", MS_PRIVATE, NULL) != 0) printf("err6\n%s\n", strerror(errno));
-  //if(mount("/", "/dev/mqueue", "ext4", MS_PRIVATE, NULL) != 0) printf("err7\n%s\n", strerror(errno));
   if(mount("/", "/run", "ext4", MS_PRIVATE, NULL) != 0) printf("err8\n%s\n", strerror(errno));
- // if(mount("/", "/usr", "ext4", MS_PRIVATE, NULL) != 0) printf("err9\n%s\n", strerror(errno));
 
   umount("/dev/pts");
   umount("/dev/shm");
@@ -36,13 +33,11 @@ static int child_fn() {
 
   mkdir("/vm", 0777);
   mkdir("/vm/proc", 0777);
-//  if(mount("/vm/dev", "/dev", "devtmpfs", MS_NOSUID, NULL) == -1) printf("err mount dev %s\n", strerror(errno));
+  if(mount("/vm/dev", "/dev", "devtmpfs", MS_NOSUID, NULL) == -1) printf("err mount dev %s\n", strerror(errno));
   if(mount("/vm/proc", "/proc", "proc", MS_NOSUID | MS_NODEV | MS_NOEXEC, NULL) == -1) printf("err mount proc %s\n", strerror(errno));
   if(mount("/vm/sys", "/sys", "sysfs", MS_NOSUID | MS_NODEV | MS_NOEXEC, NULL) == -1) printf("err mount sys %s\n", strerror(errno));
   if(mount("/vm/dev/pts", "/dev/pts", "devpts", MS_NOSUID | MS_NOEXEC, NULL) == -1) printf("err mount dev/pts %s\n", strerror(errno));
   if(mount("/vm/dev/shm", "/dev/shm", "tmpfs", MS_NOSUID | MS_NOEXEC, NULL) == -1) printf("err mount dev/dhm %s\n", strerror(errno));
-  //if(mount("/vm/dev/hugepages", "/dev/hugepages", "hugetlbfs", 0, NULL) == -1) printf("err mount dev/hugepages %s\n", strerror(errno));
-  //if(mount("/vm/dev/mqueue", "/dev/mqueue", "mqueue", 0, NULL) == -1) printf("err mount dev/mqueue %s\n", strerror(errno));
   if(mount("/vm/run", "/run", "tmpfs", 0, NULL) == -1) printf("err mount dev/mque %s\n", strerror(errno));
 
   sethostname(argv_global[1], strlen(argv_global[1]));
